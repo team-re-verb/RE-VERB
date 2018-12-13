@@ -1,0 +1,8 @@
+{
+  "name": "Typeist",
+  "version": "0.1.0",
+  "private": true,
+  "devDependencies": {
+    "react-native-scripts": "2.0.1"
+  }
+}
