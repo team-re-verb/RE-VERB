@@ -11,11 +11,12 @@ RECORD_FILENAME = "audio/record.wav"
 def main():
 
     url = 'http://localhost:4040/'
-    #params = {"req" : str(base64.b64encode(read_audio(RECORD_FILENAME)))}
-    params = {"req" : "hello"}
+    req = {"recording" : str(base64.b64encode(read_audio(RECORD_FILENAME)))}
+    
+    #print(json.dumps(req))
 
-    res = requests.get(url=url , json=params)
-    print(res.json())
+    res = requests.post(url=url , json=req).json()
+    print(res)
 
 
 if __name__ == "__main__":
