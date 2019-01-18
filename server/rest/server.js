@@ -1,8 +1,15 @@
 const express = require('express');
-const app = express(); 
+const redis = require('redis')
+
+
+const app = express();
 const port = 4040;
 
 app.use(express.json());
+
+
+const subscriber = redis.createClient();
+const publisher = redis.createClient();
 
 
 app.post('/upload' , (req,res) => {
@@ -47,9 +54,19 @@ app.get("/recordings", (req, res) => {
     res.send(_recordings);
 })
 
-app.post('/' , (req , res) => {
-    console.log(req.body);
-    res.send(req.body);
+app.get('/' , (req , res) => {
+
+    console.log("REDIS: publishing to diarization");
+    console.log("params: " + req.query.txt)
+
+    publisher.publish("diarization_py", req.query.txt);
+
+    subscriber.on('message', (channel, msg) => {
+        res.end(channel + " : " + msg);
+    })
 });
 
-app.listen(port , () => console.log("created server 📡 on port ${port}"));
+app.listen(port , () => {
+    console.log("created server 📡 on port ${port}")
+    subscriber.subscribe("diarization_node");
+});

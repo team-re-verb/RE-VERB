@@ -1,3 +1,4 @@
 client/audio/*
-.vscode
-server/rest/node_nodules
+.vscode/*
+server/rest/node_modules/*
+server/speech_diarization/test/*
