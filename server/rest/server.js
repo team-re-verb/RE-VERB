@@ -3,7 +3,7 @@ const redis = require('redis')
 
 
 const app = express();
-const port = 4040;
+const port = process.argv[2]; //4040
 
 app.use(express.json());
 
