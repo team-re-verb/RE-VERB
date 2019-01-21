@@ -67,6 +67,6 @@ app.get('/' , (req , res) => {
 });
 
 app.listen(port , () => {
-    console.log("created server 📡 on port ${port}")
+    console.log("created server 📡 on port " + port.toString())
     subscriber.subscribe("diarization_node");
 });
