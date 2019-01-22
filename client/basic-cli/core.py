@@ -10,15 +10,16 @@ RECORD_FILENAME = "audio/record.wav"
 
 def main():
 
-    url = 'http://localhost:4040/'
-    req = {"recording" : str(base64.b64encode(read_audio(RECORD_FILENAME)))}
+    url = 'http://localhost:4040/upload'
+    recording = { "file" : ("recording", open(RECORD_FILENAME, "rb"))}
     
     #print(json.dumps(req))
 
-    res = requests.post(url=url , json=req).json()
-    print(res)
+    res = requests.post(url=url , files=recording)
+    print(res.content)
 
 
 if __name__ == "__main__":
-    #record_audio(5, RECORD_FILENAME)
+    input("Press enter to start recording...")
+    record_audio(5, RECORD_FILENAME)
     main()

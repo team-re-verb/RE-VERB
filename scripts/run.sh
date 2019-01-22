@@ -5,7 +5,9 @@ TEXT_GREEN="\033[0;32m"
 TEXT_ORANGE="\033[0;33m"
 TEXT_NONE="\033[0m"
 
-PORT=4040
+echo $1
+
+PORT=$1
 
 pids=()
 
@@ -16,7 +18,11 @@ terminate() {
         echo "killing $p"
         kill $p
     done
+
+    #pwd
+    rm dump.rdb
 }
+
 
 printf "$TEXT_ORANGE Starting redis server...\n"
 redis-server &

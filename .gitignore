@@ -2,3 +2,5 @@ client/audio/*
 .vscode/*
 server/rest/node_modules/*
 server/speech_diarization/test/*
+server/rest/upload/*
+dump.rdb

@@ -1,44 +1,36 @@
 const express = require('express');
-const redis = require('redis')
+const redis = require('redis');
+const multer = require('multer');
+const fs = require('fs');
 
 
 const app = express();
 const port = process.argv[2]; //4040
 
-app.use(express.json());
-
+const DIR_PATH = "upload";
+const upload = multer({ dest: DIR_PATH }); 
 
 const subscriber = redis.createClient();
 const publisher = redis.createClient();
 
 
-app.post('/upload' , (req,res) => {
 
-    console.log(req.body)
+app.use(express.json());
 
-    switch(req.body["result"])
-    {
-        case "record":
-            res.send(JSON.stringify({
-                person1: ["record1.wav", "record2.wav"],
-                person2: ["record1.wav", "record2.wav"]
 
-            }));
-            break;
+app.post('/upload' , upload.single('file') , (req,res, next) => {
+
+    console.log(req.body);
+    console.log("path: " , req.file.path);
+
+    fs.readFile(req.file.path, (err, data) => {
+        if (err) throw err;
+        console.log(data);
         
-        case "timestamp":
-            res.send(JSON.stringify({
-                person1 : [
-                    "0:00-0:24",
-                    "1:00-1:21"
-                ],
-                person2: [
-                    "0:25-1:00",
-                    "1:22-1:44"
-                ]
-            }));
-            break;
-    }
+        publisher.publish("diarization_py", "file:" + data);
+    })
+
+    next();
 })
 
 
@@ -50,19 +42,31 @@ app.get("/recordings/:id/text", (req,res) => {
 
 app.get("/recordings", (req, res) => {
 
-    const _recordings = ["record1.wav" , "record2.wav"]
-    res.send(_recordings);
+    fs.readdir(DIR_PATH , (err, files) => {
+        if (err) throw err;
+        res.send(files);
+    });
 })
 
-app.get('/' , (req , res) => {
+app.get('/' , (req , res, next) => {
+
+    const param = req.query.txt ? req.query.txt : "defualt";
 
     console.log("REDIS: publishing to diarization");
-    console.log("params: " + req.query.txt)
+    console.log("params: " + param);
 
-    publisher.publish("diarization_py", req.query.txt);
+    publisher.publish("diarization_py", "param:" + param);
 
+    next();
+});
+
+
+
+app.use(["/" , "/upload"] , (req, res, next) => {
     subscriber.on('message', (channel, msg) => {
+        console.log("sending message: ", msg, "to ", req.path);
         res.end(channel + " : " + msg);
+        next();
     })
 });
 
