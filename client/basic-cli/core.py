@@ -13,8 +13,6 @@ def main():
     url = 'http://localhost:4040/upload'
     recording = { "file" : ("recording", open(RECORD_FILENAME, "rb"))}
     
-    #print(json.dumps(req))
-
     res = requests.post(url=url , files=recording)
     print(res.content)
 

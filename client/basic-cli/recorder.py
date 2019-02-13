@@ -7,7 +7,7 @@ import wave
 def record_audio(RECORD_SECONDS, WAVE_OUTPUT_FILENAME):
     #--------- SETTING PARAMS FOR OUR AUDIO FILE ------------#
     FORMAT = pyaudio.paInt16    # format of wave
-    CHANNELS = 2                # no. of audio channels
+    CHANNELS = 1                # no. of audio channels
     RATE = 44100                # frame rate
     CHUNK = 1024                # frames per audio sample
     #--------------------------------------------------------#

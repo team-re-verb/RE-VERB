@@ -18,18 +18,14 @@ terminate() {
         echo "killing $p"
         kill $p
     done
-
-    #pwd
-    rm dump.rdb
 }
-
 
 printf "$TEXT_ORANGE Starting redis server...\n"
 redis-server &
 pids+=($!)
 
 printf "$TEXT_RED Running python speech diarization...\n"
-./server/speech_diarization/test_redis.py &
+python server/speech_diarization/test_redis.py &
 pids+=($!)
 
 printf "$TEXT_GREEN Running rest server on port $PORT...\n $TEXT_NONE"

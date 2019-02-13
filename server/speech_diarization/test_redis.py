@@ -1,5 +1,3 @@
-#!/bin/python
-
 import redis
 import time
 import traceback
