@@ -1,0 +1,33 @@
+version: '3'
+services:
+  redis:
+    container_name: redis
+    build: ./redis
+    ports:
+    - "$REDIS_PORT:$REDIS_PORT"
+
+  speech_diarization:
+    container_name: speech_diarization
+    build: ./speech_diarization
+    #volumes:
+      #TODO: add support for volumes
+    command: python test_redis.py
+    depends_on:
+      - "redis"
+    environment:
+      REDIS_URI: "redis://redis:$REDIS_PORT"
+
+  rest:
+    container_name: rest
+    build: ./rest
+    command: npm start
+    depends_on:
+      - "redis"
+      - "speech_diarization"
+    #volumes:
+      #TODO: add support for volumes
+    ports:
+      - $SERVER_PORT:$SERVER_PORT
+    environment:
+      PORT: $SERVER_PORT
+      REDIS_URI: "redis://redis:$REDIS_PORT"

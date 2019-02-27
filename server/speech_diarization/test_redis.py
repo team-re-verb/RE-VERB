@@ -1,11 +1,12 @@
 import redis
 import time
 import traceback
+from os import environ
 
 
 def RedisExec():
     try:
-        r = redis.StrictRedis(host='localhost', port=6379)
+        r = redis.StrictRedis.from_url(environ['REDIS_URI'])
 
         p = r.pubsub()
         p.subscribe('diarization_py')
