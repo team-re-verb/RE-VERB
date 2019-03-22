@@ -6,3 +6,6 @@ numpy
 ffmpeg-python
 webrtcvad
 pydub
+keras
+h5py
+sklearn
