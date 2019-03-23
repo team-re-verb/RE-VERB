@@ -3,7 +3,7 @@ from keras.models import Sequential
 from keras.layers import Dense, LSTM
 from keras.models import load_model
 
-
+from ge2e_loss import GE2E_loss
 
 
 def preapare_model():
