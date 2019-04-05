@@ -4,6 +4,7 @@ import os
 from zipfile import ZipFile
 import operator
 import json
+from pydub import AudioSegment
 
 
 OUT_DIR = "dataset"
@@ -22,6 +23,9 @@ ami_meetings = {
 
 
 def download_meetings():
+    '''
+    Downloads all of the meetings audio files from ami corpus   
+    '''
     URL = "http://groups.inf.ed.ac.uk/ami/AMICorpusMirror/amicorpus"
 
     if not os.path.isdir(AUDIO_DIR):
@@ -40,7 +44,10 @@ def download_meetings():
     os.chdir("../")
 
 
-def download_annotations():    
+def download_annotations():
+    '''
+    Downloads the ami corpus metadata folder
+    '''    
     os.chdir(OUT_DIR)
     wget.download("http://groups.inf.ed.ac.uk/ami/AMICorpusAnnotations/ami_public_manual_1.6.2.zip", "tmp.zip")
 
@@ -51,6 +58,11 @@ def download_annotations():
 
 
 def process_segment(filename):
+    '''
+    Processes every meeting segment parts from a xml file
+
+    :returns: a list containing all of the speech timestamps (in ms)
+    '''
     segments = []
     root = ET.parse(f"{ANNOTATIONS_DIR}/{filename}").getroot()
 
@@ -65,6 +77,11 @@ def process_segment(filename):
 
 
 def get_annotations():
+    '''
+    Gets the details of every meeting from the ami dataset directory
+
+    :returns: the segmentation of speech parts for each meeting
+    '''
     segments = {}
 
 
@@ -83,36 +100,81 @@ def get_annotations():
 
                     if speaker not in segments[meeting].keys():
                         segments[meeting][speaker] = process_segment(filename)
-                
-    print("done!")
+    
 
     return segments
 
 
 def save_json(annotations):
+    '''
+    Saves the details of each meeting in a json file (in the JSON_DIR directory)
+
+    :param annotations: holds the segmentation information for each meeting
+    :type annotations: dict
+
+    :returns: None 
+    '''
     for meeting in annotations:
         meeting_details = annotations[meeting]
 
         meeting_details = dict(sorted(meeting_details.items(), key=operator.itemgetter(0)))
-        print(meeting_details)
         meeting_details["meeting"] = meeting
 
         with open(f"{meeting}.json", "w+") as f:    
             json.dump(meeting_details, f, indent=2)
+
+
+def slice_speech(json_file):
+    '''
+    Slices every meeting audio file into speech parts according to timestamps
+
+    :param json_file: a json file which holds the speech segmentation info of a meeting
+    :type json_file: file
+
+    :returns: pydub AudioSegment parts of the utterances for each speaker
+    '''
+    with open(json_file, "r") as f:
+        speech_segments = {} #dict which holds the raw speech segments
+
+        meeting = json.load(f) 
+        meeting_id =  meeting["meeting"]
         
+        del meeting["meeting"] #leaving the meeting dictionary with only the speech parts
 
-if __name__ == "__main__":
+        #every meeting file is split to 4 files which ends with a b c or d
+        for file_index in ['a']:#, 'b', 'c', 'd']:
+            audiofile =  AudioSegment.from_wav(f"{AUDIO_DIR}/{meeting_id}{file_index}.wav")
+            for speaker,utterances in meeting.items():
+                speech_segments[speaker] = []
+                for u in utterances:
+                    speech_segments[speaker] = audiofile[u["start"] : u["end"]]
+
+        return speech_segments
+
+
+def main():
+
+    if not os.path.isdir(OUT_DIR):
+        os.mkdir(OUT_DIR)
+        download_meetings()
     
-    download_meetings()
+        annotations = get_annotations()
 
-    annotations = get_annotations()
+    os.chdir(os.path.dirname(__file__))
 
     if not os.path.isdir(JSON_DIR):
         os.makedirs(JSON_DIR)
 
-    os.chdir(JSON_DIR)
-    save_json(annotations)
+        os.chdir(JSON_DIR)
+        save_json(annotations)
+    
+    os.chdir(os.path.dirname(__file__))
 
-    for meeting in annotations:
-        print(meeting)
-        print(annotations[meeting].keys())
+    speech_segments = {}
+
+    for meeting_file in os.listdir(JSON_DIR):
+        speech_segments[meeting_file] = slice_speech(f"{JSON_DIR}/{meeting_file}")
+
+
+if __name__ == "__main__":
+    main()

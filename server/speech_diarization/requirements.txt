@@ -4,8 +4,9 @@ requests==2.21.0
 wave==0.0.2
 numpy
 ffmpeg-python
-webrtcvad
+#webrtcvad
 pydub
 keras
 h5py
 sklearn
+wget
