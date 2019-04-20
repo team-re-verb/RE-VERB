@@ -5,12 +5,16 @@ from zipfile import ZipFile
 import operator
 import json
 from pydub import AudioSegment
+import numpy as np
+import random
 
+from urllib.error import HTTPError
 
 OUT_DIR = "dataset"
 ANNOTATIONS_DIR = OUT_DIR + "/metadata/segments"
 JSON_DIR = OUT_DIR + "/meetings"
 AUDIO_DIR = OUT_DIR + "/audio"
+
 
 
 ami_meetings = { 
@@ -37,10 +41,19 @@ def download_meetings():
         print(f"Downloading {meeting_id} meetings")
 
         for meeting in ami_meetings[meeting_id]:
-            for i in ['a', 'b', 'c', 'd']:
-                print(f"\tPulling {meeting}{i}...[{URL}/{meeting}{i}/audio/{meeting}{i}.Mix-Headset.wav]")
-                wget.download(f"{URL}/{meeting}{i}/audio/{meeting}{i}.Mix-Headset.wav", meeting + i + ".wav")
-    
+            try:
+                for i in ['a', 'b', 'c', 'd']:
+                    if not os.path.isfile(f"{meeting}{i}.wav"):
+                        print(f"\tPulling {meeting}{i}...[{URL}/{meeting}{i}/audio/{meeting}{i}.Mix-Headset.wav]")
+                        wget.download(f"{URL}/{meeting}{i}/audio/{meeting}{i}.Mix-Headset.wav", meeting + i + ".wav")
+                    else:
+                        print(f"Meeting {meeting} already exists.")
+                
+            except HTTPError as e:
+                print(f"Could not found {meeting}")
+                continue
+
+        
     os.chdir("../")
 
 
@@ -120,8 +133,9 @@ def save_json(annotations):
         meeting_details = dict(sorted(meeting_details.items(), key=operator.itemgetter(0)))
         meeting_details["meeting"] = meeting
 
-        with open(f"{meeting}.json", "w+") as f:    
-            json.dump(meeting_details, f, indent=2)
+        if len(meeting_details.keys()) > 1:
+            with open(f"{meeting}.json", "w+") as f:    
+                json.dump(meeting_details, f, indent=2)
 
 
 def slice_speech(json_file):
@@ -142,25 +156,57 @@ def slice_speech(json_file):
         del meeting["meeting"] #leaving the meeting dictionary with only the speech parts
 
         #every meeting file is split to 4 files which ends with a b c or d
-        for file_index in ['a']:#, 'b', 'c', 'd']:
-            audiofile =  AudioSegment.from_wav(f"{AUDIO_DIR}/{meeting_id}{file_index}.wav")
-            for speaker,utterances in meeting.items():
-                speech_segments[speaker] = []
-                for u in utterances:
-                    speech_segments[speaker] = audiofile[u["start"] : u["end"]]
+        for file_index in ['a', 'b', 'c', 'd']:
+            try:
+                audiofile =  AudioSegment.from_wav(f"{AUDIO_DIR}/{meeting_id}{file_index}.wav")
+                for speaker,utterances in meeting.items():
+                    speech_segments[speaker] = []
+                    for u in utterances:
+                        speech_segments[speaker] = audiofile[u["start"] : u["end"]]
+            except Exception as e:
+                print(f"Error has Occured: {e}")
+                continue
 
         return speech_segments
 
 
+
+def get_partial_utterances(utterances):
+    '''
+    Slices every speech segment into smaller, fixed sized segments which caontains the speech parts
+
+    :param utterances: the whole speech segments which their sizes are varied
+    :type utterances: dict (of Pydub's AudioSegment)
+
+    :returns: the fixed utterances as dict of matrices which caontains the utterances
+    '''
+
+    sliding_window_len = random.randint(140, 180) #length in ms of the sliding windows
+    sliding_window_stride = 30 #the non overlaping part of the window in ms
+
+
+    for meeting_id, speakers in utterances.items():
+        print(f"concating audio segments for meeting {meeting_id}")
+
+        full_audio = {"A": AudioSegment(), "B": AudioSegment(), "C": AudioSegment(), "D": AudioSegment() }
+        speaker_full_audio = AudioSegment()
+
+        for speaker_id, utterance in speakers.items():
+            full_audio[speaker_id] =  full_audio[speaker_id] + utterance
+
+
+
+
 def main():
 
-    if not os.path.isdir(OUT_DIR):
-        os.mkdir(OUT_DIR)
-        download_meetings()
-    
-        annotations = get_annotations()
-
     os.chdir(os.path.dirname(__file__))
+
+    #if not os.path.isdir(OUT_DIR):
+    #os.mkdir(OUT_DIR)
+    #download_meetings()
+
+    annotations = get_annotations()
+
 
     if not os.path.isdir(JSON_DIR):
         os.makedirs(JSON_DIR)
@@ -168,12 +214,13 @@ def main():
         os.chdir(JSON_DIR)
         save_json(annotations)
     
-    os.chdir(os.path.dirname(__file__))
+    #os.chdir(os.path.dirname(__file__))
 
     speech_segments = {}
 
     for meeting_file in os.listdir(JSON_DIR):
-        speech_segments[meeting_file] = slice_speech(f"{JSON_DIR}/{meeting_file}")
+        if not meeting_file.startswith("IB"):
+            speech_segments[meeting_file] = slice_speech(f"{JSON_DIR}/{meeting_file}")
 
 
 if __name__ == "__main__":
