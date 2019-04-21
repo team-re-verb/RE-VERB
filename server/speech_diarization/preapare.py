@@ -10,8 +10,8 @@ import random
 
 from urllib.error import HTTPError
 
+from utils import get_logmel_fb
 
-from pydub.playback import play
 
 OUT_DIR = "dataset"
 ANNOTATIONS_DIR = OUT_DIR + "/metadata/segments"
