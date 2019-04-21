@@ -10,6 +10,9 @@ import random
 
 from urllib.error import HTTPError
 
+
+from pydub.playback import play
+
 OUT_DIR = "dataset"
 ANNOTATIONS_DIR = OUT_DIR + "/metadata/segments"
 JSON_DIR = OUT_DIR + "/meetings"
@@ -148,21 +151,25 @@ def slice_speech(json_file):
     :returns: pydub AudioSegment parts of the utterances for each speaker
     '''
     with open(json_file, "r") as f:
-        speech_segments = {} #dict which holds the raw speech segments
-
         meeting = json.load(f) 
         meeting_id =  meeting["meeting"]
         
         del meeting["meeting"] #leaving the meeting dictionary with only the speech parts
 
+        speech_segments = {speaker: [] for speaker in meeting.keys()} #dict which holds the raw speech segments for each speaker
+
         #every meeting file is split to 4 files which ends with a b c or d
         for file_index in ['a', 'b', 'c', 'd']:
             try:
                 audiofile =  AudioSegment.from_wav(f"{AUDIO_DIR}/{meeting_id}{file_index}.wav")
+
+                print(f'Slicing speech from {meeting_id}({file_index})')
+
                 for speaker,utterances in meeting.items():
-                    speech_segments[speaker] = []
+                    print(f"Speaker {speaker}")
                     for u in utterances:
-                        speech_segments[speaker] = audiofile[u["start"] : u["end"]]
+                        speech_segments[speaker].append(audiofile[u["start"] : u["end"]])
+                        
             except Exception as e:
                 print(f"Error has Occured: {e}")
                 continue
@@ -170,41 +177,51 @@ def slice_speech(json_file):
         return speech_segments
 
 
+def concat_utterances(meeting_audio):
+    '''
+    Concats all of the sliced utterances of each speaker in each meeting into one audio
+    
+    :param meeting_audio: all of the utterances of every speaker in a meeting
+    :type meeting_audio: dict
+
+    :returns: a new dict containing the concated utterances
+    
+    '''
+
+    full_audio = {speaker: AudioSegment.empty() for speaker in meeting_audio.keys()}
+
+    for speaker, utternaces in meeting_audio.items():
+        for u in utternaces:
+            full_audio[speaker] += u
+
+    return full_audio
+        
 
 def get_partial_utterances(utterances):
     '''
-    Slices every speech segment into smaller, fixed sized segments which caontains the speech parts
+    Slices every speech segment into smaller, fixed sized segments which caontains the speech parts.
+
+    We count every meeting as a batch, and every batch should have a random segments of length 140-180 ms with 
+    window stride of 30 ms 
 
     :param utterances: the whole speech segments which their sizes are varied
     :type utterances: dict (of Pydub's AudioSegment)
 
     :returns: the fixed utterances as dict of matrices which caontains the utterances
     '''
-
-    sliding_window_len = random.randint(140, 180) #length in ms of the sliding windows
-    sliding_window_stride = 30 #the non overlaping part of the window in ms
-
-
-    for meeting_id, speakers in utterances.items():
-        print(f"concating audio segments for meeting {meeting_id}")
-
-        full_audio = {"A": AudioSegment(), "B": AudioSegment(), "C": AudioSegment(), "D": AudioSegment() }
-        speaker_full_audio = AudioSegment()
-
-        for speaker_id, utterance in speakers.items():
-            full_audio[speaker_id] =  full_audio[speaker_id] + utterance
+    
+    pass    
 
 
 
 
 def main():
 
-    os.chdir(os.path.dirname(__file__))
+    if not os.path.isdir(OUT_DIR):
+        os.mkdir(OUT_DIR)
+        download_meetings()
 
-    #if not os.path.isdir(OUT_DIR):
-    #os.mkdir(OUT_DIR)
-    #download_meetings()
-
+    
     annotations = get_annotations()
 
 
@@ -213,14 +230,24 @@ def main():
 
         os.chdir(JSON_DIR)
         save_json(annotations)
-    
-    #os.chdir(os.path.dirname(__file__))
+
+        os.chdir(os.path.dirname(__file__))
+
 
     speech_segments = {}
 
     for meeting_file in os.listdir(JSON_DIR):
         if not meeting_file.startswith("IB"):
             speech_segments[meeting_file] = slice_speech(f"{JSON_DIR}/{meeting_file}")
+
+
+    for meeting, speakers in speech_segments.items():
+        print(f"Playing {meeting}...")
+        for speaker, utterances in speakers.items():
+            print(f"Playing utternaces of speaker: {speaker}")
+
+            for u in utterances:
+                play(u)
 
 
 if __name__ == "__main__":

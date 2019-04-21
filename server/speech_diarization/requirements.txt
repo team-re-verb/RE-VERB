@@ -10,3 +10,4 @@ keras
 h5py
 sklearn
 wget
+spectralcluster

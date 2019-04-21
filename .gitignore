@@ -1,6 +1,7 @@
-client/audio/*
-.vscode/*
+client/audio
+.vscode
 server/rest/node_modules/*
 server/speech_diarization/test/*
+server/speech_diarization/dataset
 server/rest/upload/*
 dump.rdb
