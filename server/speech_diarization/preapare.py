@@ -228,7 +228,11 @@ def save_utterances(utterances):
 
 def extract_fb():
     '''
-    Extraces the filter bank for each speaker audio
+    Extraces the filter bank for each speaker audio for each meeting
+
+    :returns: 
+        array conatining numpy.ndarray of shape (num_utterances,num_features)
+        :type: numpy.array
     '''
 
     filter_banks = []
@@ -237,7 +241,10 @@ def extract_fb():
         for audio in os.listdir(f"{UTTER_DIR}/{meeting}"):
             filter_banks.append(get_logmel_fb(f"{UTTER_DIR}/{meeting}/{audio}"))
 
-    return filter_banks
+            print(f"Extracted Log-mel Filter Bank for {meeting}/{audio}")
+            np.random.shuffle(filter_banks[:-1])
+
+    return np.array(filter_banks)
 
 
 def main():
@@ -279,9 +286,8 @@ def main():
 
     fb = extract_fb()
 
-    for i in fb:
-        print(f"size: {i.shape}\n{i}")
-
+    np.save('dataset', fb)
+    print('Saved dataset!')
 
 if __name__ == "__main__":
     main()
