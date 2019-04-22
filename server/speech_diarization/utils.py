@@ -3,6 +3,7 @@ import webrtcvad
 import scipy.io.wavfile as wav
 import speechpy
 import torch.nn.functional as F
+import os
 
 
 def get_logmel_fb(path, len_window=25, stride=10, filters=40):
@@ -31,6 +32,8 @@ def get_logmel_fb(path, len_window=25, stride=10, filters=40):
 	return speechpy.feature.lmfe(signals,sample_rate,frame_length=len_window,frame_stride=stride,num_filters=filters)
 
 
+
+
 def adjust_file(audiofile):
     '''
     Adjusts an audiofile for vad and network
@@ -38,12 +41,19 @@ def adjust_file(audiofile):
     :param audiofile: an audio file
     :type audiofile: pydub.AudioSegment
 
-    :returns: ???
+    :returns: 
+        new, Adjusted audio file
+        :type: pydub.AudioSegment
     '''
 
-    audiofile.set_frame_rate(16000)
-    audiofile.set_channels(1)
-    #save file??
+    audiofile = audiofile.set_frame_rate(16000)
+    audiofile = audiofile.set_channels(1)
+    
+    audiofile.export('tmp.wav', format='wav')
+    audiofile = AudioSegment.from_file('tmp.wav')
+    
+    os.remove('tmp.wav')
+    return audiofile
 
 
 
@@ -57,15 +67,16 @@ def vad(audiofile, frame_len=30):
     :returns: the voice frames from the file
     '''
     
-    speech = []
+    speech = AudioSegment.empty()
     vad = webrtcvad.Vad()
     sample_rate = audiofile.frame_rate
 
     vad.set_mode(2) #Agressiveness of the vad
 
     for frame in audiofile[::frame_len]:
-        if vad.is_speech(frame.raw_data, sample_rate):
-            speech.append(frame)
+        if len(frame) == len(frame_len):
+                if vad.is_speech(frame.raw_data, sample_rate):
+                        speech += frame
 
     return speech
 
