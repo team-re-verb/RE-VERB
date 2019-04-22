@@ -2,6 +2,7 @@ from pydub import AudioSegment
 import webrtcvad
 import scipy.io.wavfile as wav
 import speechpy
+import torch.nn.functional as F
 
 
 def get_logmel_fb(path, len_window=25, stride=10, filters=40):
@@ -28,34 +29,6 @@ def get_logmel_fb(path, len_window=25, stride=10, filters=40):
 		signals = signals[:,0] #Getting only the first channel data
 
 	return speechpy.feature.lmfe(signals,sample_rate,frame_length=len_window,frame_stride=stride,num_filters=filters)
-
-
-def slice_audio(audio, len_window=25, stride=10):
-    '''
-    Slices an audio file into sliding windows with stride
-
-    :param audio: the audio to slice
-    :type audio: pydub.AudioSegment
-
-    :param len_window: the length of each window
-    :param stride: the stride bwtween neighboring windows
-
-    :returns: the slcied audio
-    '''
-    
-    frames = []
-
-    j = 0
-    i = len_window
-
-    for k in range(len(audio) / len_window):
-        frames.append(audio[j: i])
-
-        j = i - stride
-        i += stride
-
-
-
 
 
 def adjust_file(audiofile):
@@ -114,3 +87,43 @@ def get_full_audio(frames):
         full_audio += f
 
     return full_audio
+
+####---   GE2E loss utils   ---####
+
+def get_centroids(embeddings):
+    centroids = []
+    for speaker in embeddings:
+        centroid = speaker.sum()/len(speaker) # calc centroid per speaker
+        centroids.append(centroid)
+    centroids = torch.stack(centroids)
+    return centroids
+
+def get_centroid(embeddings, speaker_num, utterance_num):
+    centroid = 0
+    for utterance_id, utterance in enumerate(embeddings[speaker_num]):
+        if utterance_id == utterance_num:
+            continue
+        centroid = centroid + utterance
+    centroid = centroid/(len(embeddings[speaker_num])-1)
+    return centroid
+
+def get_cossim(embeddings, centroids):
+    # Calculates cosine similarity matrix. Requires (N, M, feature) input
+    cossim = torch.zeros(embeddings.size(0),embeddings.size(1),centroids.size(0))
+    for speaker_num, speaker in enumerate(embeddings):
+        for utterance_num, utterance in enumerate(speaker):
+            for centroid_num, centroid in enumerate(centroids):
+                if speaker_num == centroid_num:
+                    centroid = get_centroid(embeddings, speaker_num, utterance_num)
+                output = F.cosine_similarity(utterance,centroid,dim=0)+1e-6
+                cossim[speaker_num][utterance_num][centroid_num] = output
+    return cossim
+
+def calc_loss(sim_matrix):
+    # Calculates loss from (N, M, K) similarity matrix
+    per_embedding_loss = torch.zeros(sim_matrix.size(0), sim_matrix.size(1))
+    for j in range(len(sim_matrix)):
+        for i in range(sim_matrix.size(1)):
+            per_embedding_loss[j][i] = -(sim_matrix[j][i][j] - ((torch.exp(sim_matrix[j][i]).sum()+1e-6).log_()))
+    loss = per_embedding_loss.sum()    
+    return loss, per_embedding_loss
