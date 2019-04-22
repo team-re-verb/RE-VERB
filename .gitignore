@@ -3,5 +3,6 @@ client/audio
 server/rest/node_modules/*
 server/speech_diarization/test/*
 server/speech_diarization/dataset
+server/speech_diarization/__pycache__
 server/rest/upload/*
 dump.rdb

@@ -1,5 +1,33 @@
 from pydub import AudioSegment
 import webrtcvad
+import scipy.io.wavfile as wav
+import speechpy
+
+
+def get_logmel_fb(path, len_window=25, stride=10, filters=40):
+	'''
+	Gives the log mel filter bank features for each utterance in a audio
+
+	:param path: the path to the wave file to be read from
+	:param len_window: the length of each sliding window for the features to be extracted from
+	:param stride: the non-overlapping part for each window
+	:param filters: the number of filters (features)
+
+	:returns:
+		the logmel fb featues
+		:type: numpy.ndarray
+	'''
+
+	sample_rate, signals = wav.read(path)
+
+	#converting to ms
+	len_window /= 1000
+	stride /= 1000
+
+	if len(signals.shape) != 1:
+		signals = signals[:,0] #Getting only the first channel data
+
+	return speechpy.feature.lmfe(signals,sample_rate,frame_length=len_window,frame_stride=stride,num_filters=filters)
 
 
 def slice_audio(audio, len_window=25, stride=10):

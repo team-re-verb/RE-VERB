@@ -17,7 +17,7 @@ OUT_DIR = "dataset"
 ANNOTATIONS_DIR = OUT_DIR + "/metadata/segments"
 JSON_DIR = OUT_DIR + "/meetings"
 AUDIO_DIR = OUT_DIR + "/audio"
-
+UTTER_DIR = OUT_DIR + "/utterances"
 
 
 ami_meetings = { 
@@ -191,28 +191,53 @@ def concat_utterances(meeting_audio):
     full_audio = {speaker: AudioSegment.empty() for speaker in meeting_audio.keys()}
 
     for speaker, utternaces in meeting_audio.items():
+        
+        if not utternaces:
+            full_audio[speaker] = None
+            continue
+
         for u in utternaces:
             full_audio[speaker] += u
+
 
     return full_audio
         
 
-def get_partial_utterances(utterances):
+def save_utterances(utterances):
     '''
-    Slices every speech segment into smaller, fixed sized segments which caontains the speech parts.
+    For each meeting, the full audio of the speakers is saved as a wav file
+    in a directory containing the meeting as {meeting}/{speaker}.wav
 
-    We count every meeting as a batch, and every batch should have a random segments of length 140-180 ms with 
-    window stride of 30 ms 
-
-    :param utterances: the whole speech segments which their sizes are varied
-    :type utterances: dict (of Pydub's AudioSegment)
-
-    :returns: the fixed utterances as dict of matrices which caontains the utterances
+    :param utterances: all of the utterances for each meeting
+    :type utterances: dict
     '''
     
-    pass    
+    full_utterances = {}
+
+    for meeting, speakers in utterances.items():
+        full_utterances[meeting] = concat_utterances(speakers)
+        full_utterances[meeting] = {x:y for x,y in full_utterances[meeting].items() if y != None }
+
+        if full_utterances[meeting] != {}:
+            os.mkdir(meeting)
+    
+            for speaker, audio in full_utterances[meeting].items():
+                if audio != None:
+                    audio.export(f"{meeting}/{speaker}.wav", format="wav")
 
 
+def extract_fb():
+    '''
+    Extraces the filter bank for each speaker audio
+    '''
+
+    filter_banks = []
+
+    for meeting in os.listdir(UTTER_DIR):
+        for audio in os.listdir(f"{UTTER_DIR}/{meeting}"):
+            filter_banks.append(get_logmel_fb(f"{UTTER_DIR}/{meeting}/{audio}"))
+
+    return filter_banks
 
 
 def main():
@@ -222,7 +247,8 @@ def main():
         download_meetings()
 
     
-    annotations = get_annotations()
+    if not os.path.isdir(ANNOTATIONS_DIR):
+        annotations = get_annotations()
 
 
     if not os.path.isdir(JSON_DIR):
@@ -238,16 +264,23 @@ def main():
 
     for meeting_file in os.listdir(JSON_DIR):
         if not meeting_file.startswith("IB"):
-            speech_segments[meeting_file] = slice_speech(f"{JSON_DIR}/{meeting_file}")
+            meeting = meeting_file.split('.json')[0]
+            speech_segments[meeting] = slice_speech(f"{JSON_DIR}/{meeting_file}")
 
 
-    for meeting, speakers in speech_segments.items():
-        print(f"Playing {meeting}...")
-        for speaker, utterances in speakers.items():
-            print(f"Playing utternaces of speaker: {speaker}")
+    if not os.path.isdir(UTTER_DIR):
+        os.mkdir(UTTER_DIR)
 
-            for u in utterances:
-                play(u)
+        os.chdir(UTTER_DIR)
+        save_utterances(speech_segments)
+
+        os.chdir(os.path.dirname(__file__))
+
+
+    fb = extract_fb()
+
+    for i in fb:
+        print(f"size: {i.shape}\n{i}")
 
 
 if __name__ == "__main__":
