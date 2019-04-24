@@ -7,10 +7,12 @@ import json
 from pydub import AudioSegment
 import numpy as np
 import random
+import h5py
 
 from urllib.error import HTTPError
 
 from utils import get_logmel_fb
+
 
 
 OUT_DIR = "dataset"
@@ -247,6 +249,38 @@ def extract_fb():
     return np.array(filter_banks)
 
 
+def save_dataset():
+    '''
+    Organizes the data needed for training and testing in a convenient way and saves it
+    '''
+
+    dataset_file = h5py.File('dataset.h5', 'w')
+
+    fb = extract_fb()
+    fb = np.split(fb, len(fb) / 4) #there is a constant number of speakers.
+
+    dataset = []
+
+    for speakers in fb:
+        max_rows = max(map(lambda mat: mat.shape[0], speakers))
+        meeting_utterances = np.zeros((len(speakers),max_rows, speakers[0].shape[1]))
+
+        for speaker_id, utterances in enumerate(speakers):
+            meeting_utterances[speaker_id, :utterances.shape[0], :utterances.shape[1]] = utterances
+
+        dataset.append(meeting_utterances)
+
+
+    for meeting_id, meeting in enumerate(dataset):
+        dataset_file.create_dataset(f"{meeting_id}", data=meeting)
+        
+    #dataset_file.create_dataset('dev', data=dataset[: int(len(dataset) * 0.7)]) # ~70% of training data 
+    #dataset_file.create_dataset('eval', data=dataset[int(len(dataset) * 0.7): ]) # ~30% of testing data
+
+    dataset_file.close()
+
+
+
 def main():
 
     if not os.path.isdir(OUT_DIR):
@@ -267,12 +301,12 @@ def main():
         os.chdir(os.path.dirname(__file__))
 
 
-    speech_segments = {}
-
-    for meeting_file in os.listdir(JSON_DIR):
-        if not meeting_file.startswith("IB"):
-            meeting = meeting_file.split('.json')[0]
-            speech_segments[meeting] = slice_speech(f"{JSON_DIR}/{meeting_file}")
+    #speech_segments = {}
+#
+    #for meeting_file in os.listdir(JSON_DIR):
+    #    if not meeting_file.startswith("IB"):
+    #        meeting = meeting_file.split('.json')[0]
+    #        speech_segments[meeting] = slice_speech(f"{JSON_DIR}/{meeting_file}")
 
 
     if not os.path.isdir(UTTER_DIR):
@@ -284,9 +318,7 @@ def main():
         os.chdir(os.path.dirname(__file__))
 
 
-    fb = extract_fb()
-
-    np.save('dataset', fb)
+    save_dataset()    
     print('Saved dataset!')
 
 if __name__ == "__main__":
