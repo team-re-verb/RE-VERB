@@ -2,7 +2,11 @@ from pydub import AudioSegment
 import webrtcvad
 import scipy.io.wavfile as wav
 import speechpy
+
+import torch
+import torch.autograd as grad
 import torch.nn.functional as F
+
 import os
 
 
@@ -112,15 +116,15 @@ def get_centroids(embeddings):
 		the centroids of each speaker (from a pool of utterances)
 		:type: np.ndarray with shape of N x F (num_speakers,num_features) 
 	'''
-    centroids = []
+	centroids = []
 
-    for speaker in embeddings:
-        centroid = speaker.sum() / len(speaker) # calculate centroid per speaker
-        centroids.append(centroid)
+	for speaker in embeddings:
+		centroid = speaker.sum() / len(speaker) # calculate centroid per speaker
+		centroids.append(centroid)
 		
-    centroids = torch.stack(centroids)
-
-    return centroids
+	centroids = torch.stack(centroids)
+	
+	return centroids
 
 def get_centroid(embeddings, speaker_num, utterance_num):
 	'''
@@ -133,13 +137,13 @@ def get_centroid(embeddings, speaker_num, utterance_num):
 	:param speaker_num: the number of the speaker in which the network outputed the last embedding
 	:param utterance_num: the number of the utterance in which the network outputed the last embedding
 	'''
-    centroid = 0
-    for utterance_id, utterance in enumerate(embeddings[speaker_num]):
-        if utterance_id == utterance_num:
-            continue
-        centroid = centroid + utterance
-    centroid = centroid/(len(embeddings[speaker_num])-1)
-    return centroid
+	centroid = 0
+	for utterance_id, utterance in enumerate(embeddings[speaker_num]):
+	    if utterance_id == utterance_num:
+	        continue
+	    centroid = centroid + utterance
+	centroid = centroid/(len(embeddings[speaker_num])-1)
+	return centroid
 
 
 def get_cossim(embeddings, centroids):
@@ -181,12 +185,12 @@ def calc_loss(sim_matrix):
 		:type per_embedding_loss: np.ndarray of shape N x M (num_speakers,num_utterances) 
 	'''
 
-    per_embedding_loss = torch.zeros(sim_matrix.size(0), sim_matrix.size(1))
-
-    for j in range(len(sim_matrix)):
-        for i in range(sim_matrix.size(1)):
-            per_embedding_loss[j][i] = -(sim_matrix[j][i][j] - ((torch.exp(sim_matrix[j][i]).sum()+1e-6).log_()))
-    
+	per_embedding_loss = torch.zeros(sim_matrix.size(0), sim_matrix.size(1))
+	
+	for j in range(len(sim_matrix)):
+	    for i in range(sim_matrix.size(1)):
+	        per_embedding_loss[j][i] = -(sim_matrix[j][i][j] - ((torch.exp(sim_matrix[j][i]).sum()+1e-6).log_()))    
+	
 	loss = per_embedding_loss.sum()
-
-    return loss, per_embedding_loss
+	
+	return loss, per_embedding_loss
