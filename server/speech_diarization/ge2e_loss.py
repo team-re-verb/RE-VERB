@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 
+from utils import get_centroids, get_cossim, calc_loss
 
 class GE2ELoss(nn.Module):
     '''

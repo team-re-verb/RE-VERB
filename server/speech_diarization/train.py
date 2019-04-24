@@ -1,31 +1,32 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
-Created on Wed Sep  5 21:49:16 2018
-
-@author: harry
+code snippets and structure insipration taken from HarryVolek on GitHub
 """
-
 import os
 import random
 import time
+import h5py
 import torch
 from torch.utils.data import DataLoader
 
 from hparam import hparam as hp
 from data_load import SpeakerDatasetTIMIT, SpeakerDatasetTIMITPreprocessed
 from speech_embedder_net import SpeechEmbedder, GE2ELoss, get_centroids, get_cossim
+from loader import AMI_Dataset
 
 def train(model_path):
+    # set device to train on (CPU or GPU)
     device = torch.device(hp.device)
-    
-    # TODO: ADD DATASET OBJECT
-    train_loader = DataLoader(train_dataset, batch_size=hp.train.N, shuffle=True, num_workers=hp.train.num_workers, drop_last=True) 
-    
+
+    # dataset loader(fetches a batch)
+    train_dataset = AMI_Dataset()
+    train_loader = DataLoader(train_dataset, shuffle=True, num_workers=hp.train.num_workers, drop_last=True) 
+
     embedder_net = SpeechEmbedder().to(device)
+    
     if hp.train.restore:
         embedder_net.load_state_dict(torch.load(model_path))
     ge2e_loss = GE2ELoss(device)
+    
     #Both net and loss have trainable parameters
     optimizer = torch.optim.SGD([
                     {'params': embedder_net.parameters()},
@@ -36,23 +37,20 @@ def train(model_path):
     
     embedder_net.train()
     iteration = 0
+
     for e in range(hp.train.epochs):
         total_loss = 0
-        for batch_id, mel_db_batch in enumerate(train_loader): 
-            mel_db_batch = mel_db_batch.to(device)
-            
-            mel_db_batch = torch.reshape(mel_db_batch, (hp.train.N*hp.train.M, mel_db_batch.size(2), mel_db_batch.size(3)))
-            perm = random.sample(range(0, hp.train.N*hp.train.M), hp.train.N*hp.train.M)
-            unperm = list(perm)
-            for i,j in enumerate(perm):
-                unperm[j] = i
-            mel_db_batch = mel_db_batch[perm]
+        for batch_id, batch in enumerate(train_loader): 
+            batch = batch.to(device)
+            embeddings = torch.zeros([batch.shape[0], batch.shape[1] ,hp.model.proj]) #(num_speakers, num_utter,num_features)
+
+            for speaker_id,speaker in enumerate(batch):
+                for utter_id, utterance in enumerate(speaker):
+                    embeddings[speaker_id,utter_id] = embedder_net(utterance)                
+
             #gradient accumulates
+
             optimizer.zero_grad()
-            
-            embeddings = embedder_net(mel_db_batch)
-            embeddings = embeddings[unperm]
-            embeddings = torch.reshape(embeddings, (hp.train.N, hp.train.M, embeddings.size(1)))
             
             #get loss, call backward, step optimizer
             loss = ge2e_loss(embeddings) #wants (Speaker, Utterances, embedding)
@@ -87,6 +85,7 @@ def train(model_path):
     print("\nDone, trained model saved at", save_model_path)
 
 def test(model_path):
+    pass
     # TODO: calc DER
         
 if __name__=="__main__":
