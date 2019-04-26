@@ -7,7 +7,7 @@ class SpeechEmbedder(nn.Module):
     
     def __init__(self):
         super(SpeechEmbedder, self).__init__()    
-        self.LSTM_stack = nn.LSTM(hp.data.nfilters, hp.model.hidden, num_layers=hp.model.num_layer, batch_first=True)
+        self.LSTM_stack = nn.LSTM(input_size=hp.data.nfilters, hidden_size=hp.model.hidden, num_layers=hp.model.num_layer) #batch_first=True
         for name, param in self.LSTM_stack.named_parameters():
           if 'bias' in name:
              nn.init.constant_(param, 0.0)

@@ -9,8 +9,9 @@ import torch
 from torch.utils.data import DataLoader
 
 from hparam import hparam as hp
-from data_load import SpeakerDatasetTIMIT, SpeakerDatasetTIMITPreprocessed
-from speech_embedder_net import SpeechEmbedder, GE2ELoss, get_centroids, get_cossim
+from network import SpeechEmbedder
+from ge2e_loss import GE2ELoss
+from utils import get_centroids, get_cossim 
 from loader import AMI_Dataset
 
 def train(model_path):
@@ -19,7 +20,7 @@ def train(model_path):
 
     # dataset loader(fetches a batch)
     train_dataset = AMI_Dataset()
-    train_loader = DataLoader(train_dataset, shuffle=True, num_workers=hp.train.num_workers, drop_last=True) 
+    train_loader = DataLoader(train_dataset, shuffle=False, num_workers=hp.train.num_workers, drop_last=True) 
 
     embedder_net = SpeechEmbedder().to(device)
     
@@ -41,13 +42,21 @@ def train(model_path):
     for e in range(hp.train.epochs):
         total_loss = 0
         for batch_id, batch in enumerate(train_loader): 
+            
+            print("batch No.", batch_id, end=' ')
             batch = batch.to(device)
-            embeddings = torch.zeros([batch.shape[0], batch.shape[1] ,hp.model.proj]) #(num_speakers, num_utter,num_features)
+            
+            embeddings = torch.zeros([batch.shape[1], batch.shape[2] ,hp.model.proj]) #(num_speakers, num_utter,num_features)
+            #print("Embeddings shape:", embeddings.shape)
 
-            for speaker_id,speaker in enumerate(batch):
-                for utter_id, utterance in enumerate(speaker):
-                    embeddings[speaker_id,utter_id] = embedder_net(utterance)                
+            #for worker in batch:
+            #    for speaker_id,speaker in enumerate(worker):
+            #        print(f"speaker shape {speaker.shape}")
+            #        for utter_id, utterance in enumerate(speaker):
+            #            print(f"utter shape: {utterance.shape}")
+            #            embeddings[speaker_id,utter_id] = embedder_net(utterance)                
 
+            embeddings = embedder_net(batch[0])
             #gradient accumulates
 
             optimizer.zero_grad()
@@ -59,7 +68,10 @@ def train(model_path):
             torch.nn.utils.clip_grad_norm_(ge2e_loss.parameters(), 1.0)
             optimizer.step()
             
+            print('Curr loss:' , loss)
+
             total_loss = total_loss + loss
+
             iteration += 1
             if (batch_id + 1) % hp.train.log_interval == 0:
                 mesg = "{0}\tEpoch:{1}[{2}/{3}],Iteration:{4}\tLoss:{5:.4f}\tTLoss:{6:.4f}\t\n".format(time.ctime(), e+1,
