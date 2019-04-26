@@ -1,5 +1,5 @@
 training: !!bool "true"
-device: "cuda"
+device: "cpu"
 ---
 data:
     dataset_path: 'dataset.h5'
@@ -17,8 +17,8 @@ model:
 ---
 train:
     N : 4 #Number of speakers in batch
-    M : 5 #Number of utterances per speaker
-    num_workers: 0 #number of workers for dataloader
+    M : 500 #Number of utterances per speaker
+    num_workers: 5 #number of workers for dataloader
     lr: 0.01 
     epochs: 950 #Max training speaker epoch 
     log_interval: 30 #Epochs before printing progress
