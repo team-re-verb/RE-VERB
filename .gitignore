@@ -4,5 +4,7 @@ server/rest/node_modules/*
 server/speech_diarization/test/*
 server/speech_diarization/dataset
 server/speech_diarization/__pycache__
+server/speech_diarization/dataset.h5
+server/speech_diarization/speech_id_checkpoint
 server/rest/upload/*
 dump.rdb
