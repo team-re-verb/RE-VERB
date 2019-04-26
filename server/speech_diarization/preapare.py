@@ -280,46 +280,43 @@ def save_dataset():
     dataset_file.close()
 
 
-
 def main():
+    if not os.path.isdir(UTTER_DIR):
+        if not os.path.isdir(JSON_DIR):
+            if not os.path.isdir(ANNOTATIONS_DIR):
+                if not os.path.isdir(OUT_DIR):
+                    os.mkdir(OUT_DIR)
+                    download_meetings()
+                
+                annotations = get_annotations()
+    
 
-    if not os.path.isdir(OUT_DIR):
-        os.mkdir(OUT_DIR)
-        download_meetings()
+            os.makedirs(JSON_DIR)
+
+            os.chdir(JSON_DIR)
+            save_json(annotations)
+
+            os.chdir(os.path.dirname(__file__))
 
     
-    if not os.path.isdir(ANNOTATIONS_DIR):
-        annotations = get_annotations()
+        speech_segments = {}
 
 
-    if not os.path.isdir(JSON_DIR):
-        os.makedirs(JSON_DIR)
-
-        os.chdir(JSON_DIR)
-        save_json(annotations)
-
-        os.chdir(os.path.dirname(__file__))
+        for meeting_file in os.listdir(JSON_DIR):
+            if not meeting_file.startswith("IB"):
+                meeting = meeting_file.split('.json')[0]
+                speech_segments[meeting] = slice_speech(f"{JSON_DIR}/{meeting_file}")
 
 
-    #speech_segments = {}
-#
-    #for meeting_file in os.listdir(JSON_DIR):
-    #    if not meeting_file.startswith("IB"):
-    #        meeting = meeting_file.split('.json')[0]
-    #        speech_segments[meeting] = slice_speech(f"{JSON_DIR}/{meeting_file}")
-
-
-    if not os.path.isdir(UTTER_DIR):
         os.mkdir(UTTER_DIR)
-
         os.chdir(UTTER_DIR)
+        
         save_utterances(speech_segments)
-
         os.chdir(os.path.dirname(__file__))
-
-
-    save_dataset()    
+    
+    save_dataset()
     print('Saved dataset!')
+
 
 if __name__ == "__main__":
     main()
