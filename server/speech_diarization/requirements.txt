@@ -7,6 +7,7 @@ webrtcvad
 pydub
 torch
 h5py
+pyyaml
 wget
 spectralcluster
 speechpy

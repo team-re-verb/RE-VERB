@@ -3,7 +3,7 @@ import yaml
 
 def load_hparam(filename):
     stream = open(filename, 'r')
-    docs = yaml.load_all(stream)
+    docs = yaml.load_all(stream, Loader=yaml.FullLoader) # load all without Loader is deprecated
     hparam_dict = dict()
     for doc in docs:
         for k, v in doc.items():
