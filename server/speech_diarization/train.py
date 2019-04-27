@@ -6,6 +6,7 @@ import random
 import time
 import h5py
 import torch
+from torch.optim.lr_scheduler import LambdaLR
 from torch.utils.data import DataLoader
 
 from hparam import hparam as hp
@@ -34,6 +35,11 @@ def train(model_path):
                     {'params': ge2e_loss.parameters()}
                 ], lr=hp.train.lr)
     
+
+    #reduce_lr = lambda epoch: epoch // 50
+    #lr_schceduler = LambdaLR(optimizer, lr_lambda=reduce_lr)
+
+
     os.makedirs(hp.train.checkpoint_dir, exist_ok=True)
     
     embedder_net.train()
@@ -70,12 +76,12 @@ def train(model_path):
             
             print('Curr loss:' , loss)
 
-            total_loss = total_loss + loss
+            #total_loss = total_loss + loss
 
             iteration += 1
             if (batch_id + 1) % hp.train.log_interval == 0:
-                mesg = "{0}\tEpoch:{1}[{2}/{3}],Iteration:{4}\tLoss:{5:.4f}\tTLoss:{6:.4f}\t\n".format(time.ctime(), e+1,
-                        batch_id+1, len(train_dataset)//hp.train.N, iteration,loss, total_loss / (batch_id + 1))
+                mesg = "{0}\tEpoch:{1}[{2}/{3}],Iteration:{4}\tLoss:{5:.4f}\t\n".format(time.ctime(), e+1,
+                        batch_id+1, len(train_dataset)//hp.train.N, iteration,loss)
                 print(mesg)
                 if hp.train.log_file is not None:
                     with open(hp.train.log_file,'a') as f:
