@@ -257,16 +257,17 @@ def save_dataset():
     dataset_file = h5py.File('dataset.h5', 'w')
 
     fb = extract_fb()
+    fb = np.array(sorted(fb, key=lambda mat: mat.shape[0], reverse=True))
     fb = np.split(fb, len(fb) / 4) #there is a constant number of speakers.
 
     dataset = []
 
     for speakers in fb:
-        max_rows = max(map(lambda mat: mat.shape[0], speakers))
-        meeting_utterances = np.zeros((len(speakers),max_rows, speakers[0].shape[1]))
+        min_rows = min(map(lambda mat: mat.shape[0], speakers))
+        meeting_utterances = np.zeros((len(speakers),min_rows, speakers[0].shape[1]))
 
         for speaker_id, utterances in enumerate(speakers):
-            meeting_utterances[speaker_id, :utterances.shape[0], :utterances.shape[1]] = utterances
+            meeting_utterances[speaker_id, :utterances.shape[0], :utterances.shape[1]] = utterances[:min_rows, :]
 
         dataset.append(meeting_utterances)
 
