@@ -2,20 +2,21 @@ import torch
 import spectralcluster
 from pydub import AudioSegment
 from collections import Counter
+import json
 
 import utils
 import network
 import hparam as hp
 
 
-def get_fb(filename):
+def prepeare_file(filename):
     '''
-    Returns the log mel filterbank for a given file
+    Returns the necessary data for dirarization for a given file (log mel filterbank and voice time stamps)
 
     :param filename: the path of the file
     :returns: 
-        the log mel filterbank
-        :type: np.ndarray of shape (num_utterances, num_filters)
+        the log mel filterbank and the time stamps
+        :type: tuple of (np.ndarray of shape (num_utterances, num_filters), list)
     '''
 
     tmp_path = filename + '.tmp'
@@ -23,35 +24,52 @@ def get_fb(filename):
     audiofile = AudioSegment.from_file(filename)
     audiofile = utils.adjust_file(audiofile)
 
-    vad = utils.vad(audiofile)
+    vad, timestemps = utils.vad(audiofile)
     vad.export(tmp_path, format='wav')
 
-    return utils.get_logmel_fb(tmp_path)
+    return utils.get_logmel_fb(tmp_path), timestemps
 
 
 
-#IMPORTANT: We need to get the actual voice timestamps and then return the diarization timestamps according to the relative times
-
-def get_timestamps(results):
+def get_timestamps(vad_ts, diar_res, diar_frame=25, diar_stride=10):
     '''
     Gets the timestamps from the results of the clusterer
 
-    :param results: the results of the full diarization process
-    :type results: list (of speaker numbers)
+    :param vad_ts: the time-stamps of when the speakers had spoken in the conversation
+    :type vad_ts: list (of tuples which contains the pairs of timestamps)
+
+    :param diar_res: the results of the full diarization process
+    :type diar_res: list (of speaker numbers)
+
+    :param diar_frame: the length of each utterance
+    :type diar_frame: int
+
+    :param diar_stride: the not-overlapping part of each utterance
+    :type diar_stride: int
 
     :returns:
-        the timestamps for each speaker
+        the timestamps of each speaker in the conversation
         :type: dict
     '''
 
-    occurences = { x:[] for x in Counter(results).keys() }
+    occurences = { x:[] for x in Counter(diar_res).keys() }
 
-    ts = 0
-    segment = 25
+    for times in vad_ts:
+        for ts in range(times[0], times[1], diar_stride):
+            occurences[diar_res[0]].append(ts)
+            del diar_res[0]
+            #Not 100% accurate because we need to consider the last ebedding of a speaker and appent the diar_frame to it
 
-    for ts,speaker in enumerate(results):
-        occurences[speaker].append(ts * segment)
-    
+
+    for speaker, timestamps in diar_res.keys():
+        for i in range(len(timestamps) - 1):
+            if i <= len((timestamps)):
+                if timestamps[i + 1] - timestamps[i] == diar_stride:
+                    del timestamps[i + 1]
+                    #Removing unessecary timestemps
+
+        diar_res[speaker] = zip(timestamps[0][::2], timestamps[1][::2]) #Ordering each pair of timestamps in tuples
+
     return occurences
 
 
@@ -70,7 +88,7 @@ def get_diarization(filename):
     net.eval()
 
     embeddings = torch.Tensor()
-    filter_banks = get_fb(filename)
+    filter_banks, voice_timestamps = prepeare_file(filename)
 
     clusterer = spectralcluster.SpectralClusterer(min_clusters=2, max_clusters=100, p_percentile=0.95, gaussian_blur_sigma=1)
 
@@ -80,11 +98,7 @@ def get_diarization(filename):
 
     results = clusterer.predict(embeddings)
 
-    timestamps = get_timestamps(results)
-    print(timestamps)
+    diarization_res = get_timestamps(voice_timestamps, results)
+    print(diarization_res)
 
-    return timestamps
-
-
-if  __name__ == "__main__":
-    get_diarization("tmp.wav")
+    return json.dumps(diarization_res)

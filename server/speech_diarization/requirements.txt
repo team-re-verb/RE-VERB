@@ -11,3 +11,4 @@ pyyaml
 wget
 spectralcluster
 speechpy
+simpleder

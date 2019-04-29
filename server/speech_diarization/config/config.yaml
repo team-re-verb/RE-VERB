@@ -17,9 +17,9 @@ model:
 ---
 train:
     N : 4 #Number of speakers in batch
-    M : 500 #Number of utterances per speaker
+    M : 50 #Number of utterances per speaker
     num_workers: 5 #number of workers for dataloader
-    lr: 0.01 
+    lr: 0.025 
     epochs: 950 #Max training speaker epoch 
     log_interval: 30 #Epochs before printing progress
     log_file: './speech_id_checkpoint/Stats'
