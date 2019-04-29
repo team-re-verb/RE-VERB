@@ -37,14 +37,14 @@ def train(model_path):
     
 
     #reduce_lr = lambda lr: lr // 50
-    lr_schceduler = ExponentialLR(optimizer, gamma=0.1)
+    lr_schceduler = ExponentialLR(optimizer, gamma=0.5)
 
 
     os.makedirs(hp.train.checkpoint_dir, exist_ok=True)
     
     embedder_net.train()
     iteration = 0
-    reduce_lr_id = 500
+    reduce_lr_id = 200
 
     for e in range(hp.train.epochs):
         total_loss = 0
