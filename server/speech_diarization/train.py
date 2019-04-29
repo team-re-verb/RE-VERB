@@ -6,7 +6,7 @@ import random
 import time
 import h5py
 import torch
-from torch.optim.lr_scheduler import LambdaLR
+from torch.optim.lr_scheduler import ExponentialLR
 from torch.utils.data import DataLoader
 
 from hparam import hparam as hp
@@ -36,14 +36,15 @@ def train(model_path):
                 ], lr=hp.train.lr)
     
 
-    #reduce_lr = lambda epoch: epoch // 50
-    #lr_schceduler = LambdaLR(optimizer, lr_lambda=reduce_lr)
+    #reduce_lr = lambda lr: lr // 50
+    lr_schceduler = ExponentialLR(optimizer, gamma=0.1)
 
 
     os.makedirs(hp.train.checkpoint_dir, exist_ok=True)
     
     embedder_net.train()
     iteration = 0
+    reduce_lr_id = 500
 
     for e in range(hp.train.epochs):
         total_loss = 0
@@ -75,6 +76,11 @@ def train(model_path):
             optimizer.step()
             
             print('Curr loss:' , loss)
+
+            if batch_id != 0 and batch_id % reduce_lr_id == 0:
+                print('Reduced lr in 0.1')
+                lr_schceduler.step()
+                reduce_lr_id //= 2
 
             #total_loss = total_loss + loss
 

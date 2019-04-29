@@ -68,21 +68,31 @@ def vad(audiofile, frame_len=30):
     :param audiofile: the audio file to perform the vad on
     :type audiofile: pydub.AudioSegment
 
-    :returns: the voice frames from the file
+    :returns: the voice frames from the file and a list of voice activity timestamps
     '''
     
     speech = AudioSegment.empty()
     vad = webrtcvad.Vad()
     sample_rate = audiofile.frame_rate
 
+
+    voice_indexes = [i for i in range(0, len(audiofile), frame_len)] #every index represents a timestamp with jump of frame_len miliseconds
+    voice_ts = []
+
     vad.set_mode(2) #Agressiveness of the vad
 
-    for frame in audiofile[::frame_len]:
+
+    for ts,frame in enumerate(audiofile[::frame_len]):
         if len(frame) == len(frame_len):
                 if vad.is_speech(frame.raw_data, sample_rate):
                         speech += frame
+                        voice_ts.append(voice_indexes[ts]) #Adding the time-stamp if there is a voice in that frame
 
-    return speech
+	
+	#splitting the list of time-stamps into even and odd lists then zip them to get list of tuples of (start,end)
+    voice_ts = list(zip(voice_indexes[0:][::2], voice_indexes[1:][::2])) 
+	 
+    return speech, voice_ts
 
 
 
