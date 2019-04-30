@@ -2,7 +2,7 @@ import redis
 import time
 import traceback
 from os import environ
-from daiarization import get_diarization
+from diarization import get_diarization
 
 def ServerMain():
     try:

@@ -52,7 +52,7 @@ app.post('/upload' , upload.single('file') , (req,res, next) => {
         if (err) throw err;
         console.log(data);
         
-        publisher.publish("diarization_py", "file:" + data);
+        publisher.publish("diarization_py", "file:" + req.file.path);
     })
 
     next();

@@ -12,3 +12,4 @@ wget
 spectralcluster
 speechpy
 simpleder
+sklearn
