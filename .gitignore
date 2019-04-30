@@ -2,9 +2,11 @@ client/audio
 .vscode
 server/rest/node_modules/*
 server/speech_diarization/test/*
-server/speech_diarization/dataset
 server/speech_diarization/__pycache__
-server/speech_diarization/dataset.h5
-server/speech_diarization/speech_id_checkpoint
+server/speech_diarization/model/dataset
+server/speech_diarization/model/__pycache__
+server/speech_diarization/model/dataset.h5
+server/speech_diarization/model/speech_id_checkpoint
 server/rest/upload/*
+client/basic-cli/__pycache__/
 dump.rdb

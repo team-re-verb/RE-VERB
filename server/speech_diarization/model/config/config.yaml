@@ -1,0 +1,34 @@
+training: !!bool "true"
+device: "cpu"
+---
+data:
+    dataset_path: 'dataset.h5'
+    train_size: 0.85 # test size is "1 - (train_size)"
+    sr: 16000
+    window: 25 #(millisecs)
+    stride: 10 #(millisecs)
+    nfilters: 40 #Number of mel energies to extract
+---   
+model:
+    hidden: 768 #Number of LSTM hidden layer units
+    num_layer: 3 #Number of LSTM layers
+    proj: 256 #Embedding size
+    model_path: './model.model' #Model path for testing, inference, or resuming training
+---
+train:
+    N : 4 #Number of speakers in batch
+    M : 50 #Number of utterances per speaker
+    num_workers: 5 #number of workers for dataloader
+    lr: 0.025 
+    epochs: 950 #Max training speaker epoch 
+    log_interval: 30 #Epochs before printing progress
+    log_file: './speech_id_checkpoint/Stats'
+    checkpoint_interval: 120 #Save model after x speaker epochs
+    checkpoint_dir: './speech_id_checkpoint'
+    restore: !!bool "false" #Resume training from previous model path
+---
+test:
+    N : 4 #Number of speakers in batch
+    M : 5 #Number of utterances per speaker
+    num_workers: 8 #number of workers for data laoder
+    epochs: 10 #testing speaker epochs
