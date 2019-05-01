@@ -2,11 +2,14 @@ import torch
 import spectralcluster
 from pydub import AudioSegment
 from collections import Counter
+import numpy as np
 import json
+import os
+
 
 import model.utils as utils
 import model.network as network
-#import model.hparam as hp
+from model.hparam import hp
 
 
 def prepeare_file(filename):
@@ -24,7 +27,7 @@ def prepeare_file(filename):
     audiofile = AudioSegment.from_file(filename)
     audiofile = utils.adjust_file(audiofile)
 
-    vad, timestemps = utils.vad(audiofile)
+    vad, timestemps = utils.vad(audiofile, agressiveness=1)
     vad.export(tmp_path, format='wav')
 
     return utils.get_logmel_fb(tmp_path), timestemps
@@ -53,22 +56,24 @@ def get_timestamps(vad_ts, diar_res, diar_frame=25, diar_stride=10):
     '''
 
     occurences = { x:[] for x in Counter(diar_res).keys() }
+    count = 0
 
     for times in vad_ts:
         for ts in range(times[0], times[1], diar_stride):
-            occurences[diar_res[0]].append(ts)
-            del diar_res[0]
+            occurences[diar_res[count]].append(ts)
+            count += 1
+            #del diar_res[0]
             #Not 100% accurate because we need to consider the last ebedding of a speaker and appent the diar_frame to it
 
 
-    for speaker, timestamps in diar_res.keys():
+    for speaker, timestamps in occurences.items():
         for i in range(len(timestamps) - 1):
-            if i <= len((timestamps)):
+            if i + 1 < len((timestamps)):
                 if timestamps[i + 1] - timestamps[i] == diar_stride:
                     del timestamps[i + 1]
                     #Removing unessecary timestemps
 
-        diar_res[speaker] = zip(timestamps[0][::2], timestamps[1][::2]) #Ordering each pair of timestamps in tuples
+        occurences[speaker] = list(zip(timestamps[0::2], timestamps[1::2])) #Ordering each pair of timestamps in tuples
 
     return occurences
 
@@ -84,14 +89,14 @@ def get_diarization(filename):
     '''
 
     net = network.SpeechEmbedder()
-    import os
-    net.load_state_dict(torch.load(f"{os.path.dirname(__file__)}/model/model.model")) #hp.model.model_path
+    net.load_state_dict(torch.load(hp.model.model_path))
     net.eval()
 
-    print(f'Loaded model from model/model.model!') #{hp.model.model_path}
+    print(f'Loaded model from {hp.model.model_path}!') #{hp.model.model_path}
 
-    embeddings = torch.Tensor()
+    embeddings = []
     filter_banks, voice_timestamps = prepeare_file(filename)
+    #os.remove(f"{filename}.tmp")
 
     print('Extracted filerbank and vad time stamps')
 
@@ -100,17 +105,32 @@ def get_diarization(filename):
     print('Initiated clusterer')
     
     for utterance in filter_banks:
-        utterance = torch.Tensor(utterance)
-        torch.stack((embeddings, net(utterance)))
-        print('Got result from network!')
+        utterance = torch.Tensor(utterance).unsqueeze_(0).unsqueeze_(0)
+        embeddings.append(net(utterance))
+    
+    embeddings = torch.squeeze(torch.stack(embeddings))
+    
+    print('Got result from network!')
 
-    embeddings = embeddings.numpy()
+    embeddings = embeddings.detach().numpy()
     print('Converted to numpy')
+    
+    for i in range(embeddings.shape[0]):
+        for j in range(embeddings.shape[1]):
+            if np.isnan(embeddings[i,j]):
+                print(f"Nan: ({i},{j})")
+            elif np.isinf(embeddings[i,j]):
+                print(f"Inf: ({i},{j})")
 
     results = clusterer.predict(embeddings)
     print(f'Predicted results from clusterer {results}')
 
     diarization_res = get_timestamps(voice_timestamps, results)
-    print(diarization_res)
+    diarization_res = {str(x):y for x,y in diarization_res.items()}
 
-    return json.dumps(diarization_res)
+
+    return json.dumps(diarization_res, indent=2)
+
+if __name__ == '__main__':
+    wow = get_diarization('../../client/basic-cli/audio/record.wav')
+    print(wow)

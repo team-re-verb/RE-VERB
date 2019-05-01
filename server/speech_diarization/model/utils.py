@@ -61,12 +61,14 @@ def adjust_file(audiofile):
 
 
 
-def vad(audiofile, frame_len=30):
+def vad(audiofile, frame_len=30, agressiveness=1):
     '''
     Performes Voice Activity Detection on an audio file
 
     :param audiofile: the audio file to perform the vad on
     :type audiofile: pydub.AudioSegment
+
+    :param agressiveness: the agressiveness for the vad (from 1 - 3)
 
     :returns: the voice frames from the file and a list of voice activity timestamps
     '''
@@ -79,7 +81,7 @@ def vad(audiofile, frame_len=30):
     voice_indexes = [i for i in range(0, len(audiofile), frame_len)] #every index represents a timestamp with jump of frame_len miliseconds
     voice_ts = []
 
-    vad.set_mode(2) #Agressiveness of the vad
+    vad.set_mode(agressiveness) #Agressiveness of the vad
 
 
     for ts,frame in enumerate(audiofile[::frame_len]):
