@@ -9,8 +9,8 @@ services:
   speech_diarization:
     container_name: speech_diarization
     build: ./speech_diarization
-    #volumes:
-      #TODO: add support for volumes
+    volumes:
+      - reverb:/rest/upload
     command: python server.py
     depends_on:
       - "redis"
@@ -24,10 +24,14 @@ services:
     depends_on:
       - "redis"
       - "speech_diarization"
-    #volumes:
-      #TODO: add support for volumes
+    volumes:
+      - reverb:/rest/upload
     ports:
       - $SERVER_PORT:$SERVER_PORT
     environment:
       PORT: $SERVER_PORT
       REDIS_URI: "redis://redis:$REDIS_PORT"
+
+volumes:
+  reverb:
+    external: false

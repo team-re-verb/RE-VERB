@@ -11,3 +11,4 @@ COPY diarization.py diarization.py
 
 COPY model/*.py model/
 COPY model/model.model model/model.model
+COPY model/config model/config

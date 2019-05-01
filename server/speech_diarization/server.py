@@ -4,6 +4,8 @@ import traceback
 from os import environ
 from diarization import get_diarization
 
+import os
+
 def ServerMain():
     try:
         r = redis.StrictRedis.from_url(environ['REDIS_URI'])
@@ -22,6 +24,7 @@ def ServerMain():
                     r.publish("diarization_node" , "hello " + command[1])
                 elif command[0] == "file":
                     print(f"Got file name: {command[1]}")
+                    print(os.listdir())
                     diarization_results = get_diarization(command[1])
                     r.publish("diarization_node", f"{diarization_results}")
                 
