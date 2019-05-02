@@ -1,8 +1,11 @@
-FROM python:3.6
+FROM python:3.6-alpine3.9
+#FROM python:3.6
 
 WORKDIR /reverb/speech_diarization
 
 COPY requirements.txt requirements.txt
+
+RUN apk add  --no-cache ffmpeg musl-dev gcc 
 RUN pip install -r requirements.txt
 
 

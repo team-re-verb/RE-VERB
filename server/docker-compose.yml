@@ -10,7 +10,7 @@ services:
     container_name: speech_diarization
     build: ./speech_diarization
     volumes:
-      - reverb:/rest/upload
+      - reverb:/upload
     command: python server.py
     depends_on:
       - "redis"
@@ -25,7 +25,7 @@ services:
       - "redis"
       - "speech_diarization"
     volumes:
-      - reverb:/rest/upload
+      - reverb:/upload
     ports:
       - $SERVER_PORT:$SERVER_PORT
     environment:

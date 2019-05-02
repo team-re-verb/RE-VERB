@@ -130,3 +130,7 @@ def get_diarization(filename):
 
 
     return json.dumps(diarization_res, indent=2)
+
+#if __name__ == "__main__":
+#    wow = get_diarization("../../client/basic-cli/audio/record.wav")
+#    print(wow)
