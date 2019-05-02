@@ -17,7 +17,7 @@ const fs = require('fs');
 const app = express();
 const port = process.env.PORT || process.argv[2] || 4040; //default 4040
 
-const DIR_PATH = "upload";
+const DIR_PATH = "/upload";
 const upload = multer({ dest: DIR_PATH }); 
 
 
