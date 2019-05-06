@@ -1,13 +1,12 @@
 redis==3.1.0
 requests==2.21.0
 wave==0.0.2
-numpy
+numpy==1.15.4
 ffmpeg-python
 webrtcvad
 pydub
-https://download.pytorch.org/whl/cu100/torch-1.1.0-cp36-cp36m-linux_x86_64.whl
 #h5py
-pyyaml
+pyyaml>=5.1
 wget
 spectralcluster
 speechpy
