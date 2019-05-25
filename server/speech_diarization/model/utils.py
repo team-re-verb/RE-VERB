@@ -86,14 +86,16 @@ def vad(audiofile, frame_len=30, agressiveness=1):
 
     for ts,frame in enumerate(audiofile[::frame_len]):
         if len(frame) == frame_len:
-                if vad.is_speech(frame.raw_data, sample_rate):
-                        speech += frame
-                        voice_ts.append(voice_indexes[ts]) #Adding the time-stamp if there is a voice in that frame
+            if vad.is_speech(frame.raw_data, sample_rate):
+                speech += frame
+                if not voice_ts:
+                    voice_ts.append(voice_indexes[ts])
+                elif voice_ts[-1] + frame_len != voice_indexes[ts]:
+                    voice_ts.append(voice_indexes[ts]) #Adding the time-stamp if there is a voice in that frame
 
     
     #splitting the list of time-stamps into even and odd lists then zip them to get list of tuples of (start,end)
-    voice_ts = list(zip(voice_indexes[0:][::2], voice_indexes[1:][::2])) 
-     
+    voice_ts = list(zip(voice_ts[0:][::2], voice_ts[1:][::2])) 
     return speech, voice_ts
 
 
