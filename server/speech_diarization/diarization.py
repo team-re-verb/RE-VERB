@@ -55,27 +55,40 @@ def get_timestamps(vad_ts, diar_res, diar_frame=25, diar_stride=10):
         :type: dict
     '''
 
-    occurences = { x:[] for x in Counter(diar_res).keys() }
+    occurrences = { x:[] for x in Counter(diar_res).keys() }
     count = 0
+    curr_speaker = None
+    curr_ts = None
 
     for times in vad_ts:
-        for ts in range(times[0], times[1], diar_stride):
-            occurences[diar_res[count]].append(ts)
+        for ts in range(times[0],times[1],diar_stride):
+            speaker = diar_res[count]
+            if speaker != curr_speaker: # new sequence
+                if curr_ts != None:
+                    occurrences[diar_res[count-1]].append(curr_ts)
+                curr_ts = [ts, ts + diar_frame]
+                curr_speaker = speaker
+            else:
+                curr_ts[1] += diar_stride
+
             count += 1
-            #del diar_res[0]
-            #Not 100% accurate because we need to consider the last ebedding of a speaker and appent the diar_frame to it
+
+    #for times in vad_ts:
+    #    for ts in range(times[0], times[1], diar_stride):
+    #        if not occurences[diar_res[count]]:
+    #            occurences[diar_res[count]].append(ts)
+    #            curr_speaker = diar_res[count]
+    #        elif occurences[diar_res[count]][-1] + diar_stride != ts: 
+    #            occurences[diar_res[count]].append(ts)
+    #        count += 1
+    #        #del diar_res[0]
+    #        #Not 100% accurate because we need to consider the last ebedding of a speaker and appent the diar_frame to it
 
 
-    for speaker, timestamps in occurences.items():
-        for i in range(len(timestamps) - 1):
-            if i + 1 < len((timestamps)):
-                if timestamps[i + 1] - timestamps[i] == diar_stride:
-                    del timestamps[i + 1]
-                    #Removing unessecary timestemps
+    #for speaker in occurences.keys():
+    #    occurences[speaker] = list(zip(occurences[speaker][0::2], occurences[speaker][1::2])) #Ordering each pair of timestamps in tuples
 
-        occurences[speaker] = list(zip(timestamps[0::2], timestamps[1::2])) #Ordering each pair of timestamps in tuples
-
-    return occurences
+    return occurrences
 
 
 def get_diarization(filename):
@@ -119,7 +132,6 @@ def get_diarization(filename):
         for j in range(embeddings.shape[1]):
             if np.isnan(embeddings[i,j]):
                 print(f"Nan: ({i},{j})")
-            elif np.isinf(embeddings[i,j]):
                 print(f"Inf: ({i},{j})")
 
     results = clusterer.predict(embeddings)
@@ -131,6 +143,6 @@ def get_diarization(filename):
 
     return json.dumps(diarization_res, indent=2)
 
-#if __name__ == "__main__":
-#    wow = get_diarization("../../client/basic-cli/audio/record.wav")
-#    print(wow)
+if __name__ == "__main__":
+    wow = get_diarization("../../client/basic-cli/audio/record.wav")
+    print(wow)
