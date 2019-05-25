@@ -42,6 +42,10 @@ else
 // server
 app.use(express.json());
 
+app.use((req,res,next) => {
+    res.setHeader('Access-Control-Allow-Origin', 'http://localhost:8080');
+    next()
+})
 
 app.post('/upload' , upload.single('file') , (req,res, next) => {
 
