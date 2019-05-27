@@ -37,7 +37,7 @@ else {
 }
 
 
-// server
+// support for json
 app.use(express.json());
 
 /*
@@ -48,18 +48,6 @@ app.use((req,res,next) => {
     next()
 })
 
-
-/**
- * In Both cases for requests for / and /upload there is a need to 
- * send messages to the python server
-*/
-app.use(["/" , "/upload"] , (req, res, next) => {
-    subscriber.on('message', (channel, msg) => {
-        console.log("sending message: ", msg, "to ", req.path);
-        res.end(channel + " : " + msg);
-        next();
-    })
-});
 
 /**
  * Event for post request with file upload.
@@ -99,12 +87,24 @@ app.get('/' , (req , res, next) => {
 
 
 /**
+ * In Both cases for requests for / and /upload there is a need to 
+ * send messages to the python server
+*/
+app.use(["/" , "/upload"] , (req, res, next) => {
+    subscriber.on('message', (channel, msg) => {
+        console.log("sending message: ", msg, "to ", req.path);
+        res.end(channel + " : " + msg);
+        next();
+    })
+});
+
+/**
  * Used for returning HTTP 404 errors in case that a user tries to access a page which is not found
 */
-app.get('*', function(req, res) {
-    console.log('not found!!!@!@!')
-    res.status(404).send('Page not found.');
-});
+//app.get('*', function(req, res) {
+//    console.log('not found!!!@!@!')
+//    res.status(404).send('Page not found.');
+//});
 
 
 /**
