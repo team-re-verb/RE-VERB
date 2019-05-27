@@ -27,13 +27,11 @@ let publisher;
 
 const redis_uri = process.env.REDIS_URI || process.argv[3];
 
-if(redis_uri != undefined)
-{
+if(redis_uri != undefined) {
     subscriber = redis.createClient(redis_uri);
     publisher = redis.createClient(redis_uri);
 }
-else
-{
+else {
     subscriber = redis.createClient();
     publisher = redis.createClient();
 }
@@ -42,11 +40,31 @@ else
 // server
 app.use(express.json());
 
+/*
+* Used in order to allow to make HTTP requests to the same address
+*/
 app.use((req,res,next) => {
     res.setHeader('Access-Control-Allow-Origin', 'http://localhost:8080');
     next()
 })
 
+
+/**
+ * In Both cases for requests for / and /upload there is a need to 
+ * send messages to the python server
+*/
+app.use(["/" , "/upload"] , (req, res, next) => {
+    subscriber.on('message', (channel, msg) => {
+        console.log("sending message: ", msg, "to ", req.path);
+        res.end(channel + " : " + msg);
+        next();
+    })
+});
+
+/**
+ * Event for post request with file upload.
+ * Send the request to the python server
+ * */
 app.post('/upload' , upload.single('file') , (req,res, next) => {
 
     console.log(req.body);
@@ -63,20 +81,10 @@ app.post('/upload' , upload.single('file') , (req,res, next) => {
 })
 
 
-app.get("/recordings/:id/text", (req,res) => {
-    //TODO wit.ai speech-to-text
-    res.send("wowowoww");
-})
-
-
-app.get("/recordings", (req, res) => {
-
-    fs.readdir(DIR_PATH , (err, files) => {
-        if (err) throw err;
-        res.send(files);
-    });
-})
-
+/**
+ * Event listener to GET request of /
+ * 
+*/
 app.get('/' , (req , res, next) => {
 
     const param = req.query.txt ? req.query.txt : "defualt";
@@ -90,15 +98,18 @@ app.get('/' , (req , res, next) => {
 });
 
 
-
-app.use(["/" , "/upload"] , (req, res, next) => {
-    subscriber.on('message', (channel, msg) => {
-        console.log("sending message: ", msg, "to ", req.path);
-        res.end(channel + " : " + msg);
-        next();
-    })
+/**
+ * Used for returning HTTP 404 errors in case that a user tries to access a page which is not found
+*/
+app.get('*', function(req, res) {
+    console.log('not found!!!@!@!')
+    res.status(404).send('Page not found.');
 });
 
+
+/**
+* Listens for connection in a specified port
+*/
 app.listen(port , () => {
     console.log("created server 📡 on port " + port)
     subscriber.subscribe("diarization_node");

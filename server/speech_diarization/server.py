@@ -7,6 +7,9 @@ from diarization import get_diarization
 import os
 
 def ServerMain():
+    '''
+    The main server logic which connects to the webserver and redis
+    '''
     try:
         r = redis.StrictRedis.from_url(environ['REDIS_URI'])
 
@@ -21,7 +24,7 @@ def ServerMain():
 
                 if command[0] == "param":
                     print("sending hello " + command[1])
-                    r.publish("diarization_node" , "hello " + command[1])
+                    r.publish("diarization_node" , "Welcome to RE:VERB api server. Upload a file to /upload in order to get diarization results!")
                 elif command[0] == "file":
                     print(f"Got file name: {command[1]}")
                     print(os.listdir())
