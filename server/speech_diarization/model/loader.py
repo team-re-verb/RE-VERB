@@ -6,7 +6,22 @@ import h5py
 from model.hparam import hp
 
 class AMI_Dataset(Dataset):
+    '''
+    This class is used to load and split the dataset in order to create batches (in parallel).  
+    (It inherits the torch.utils.data.Dataset class).
+
+    In practice, the instance of this class is used with the DataLoader class. 
+    (this class only specifies how to parse the dataset)
+    '''
+
+
     def __init__(self, shuffle=False):
+        '''
+        The constructor this class
+
+        :param shuffle: whether to pick utterances randomally
+        :type shuffle: bool 
+        '''
         self.meetings = h5py.File(hp.data.dataset_path, 'r')
         self.keys = sorted(list(self.meetings.keys()), key=lambda k: int(k))
         
@@ -32,10 +47,18 @@ class AMI_Dataset(Dataset):
             random.shuffle(self.keys)  # shuffle meetings
 
     def __del__(self):
+        '''
+        The destructor of the class. We need to close the dataset
+        in order to not block it from use later
+        '''
         self.meetings.close()
         #super.__del__()
 
     def __len__(self):
+        '''
+        Python special function which tells the length of an object.
+        In this class, this function is used in order to get the number of batches available
+        '''
         count = 0
 
         for i in self.keys:
@@ -44,6 +67,10 @@ class AMI_Dataset(Dataset):
         return count
 
     def __getitem__(self, idx):
+        '''
+        Python special function which gets a specific index from an object. eg: obj[1] will call the __getitem__(1) function
+        In this class, this function is used in order to get a specific batch
+        '''
         # fetches one batch
         for i in self.keys:
             table_rows = int(self.meetings[i].shape[1] / self.utter_num)

@@ -15,7 +15,13 @@ from model.ge2e_loss import GE2ELoss
 from model.utils import get_centroids, get_cossim 
 from model.loader import AMI_Dataset
 
-def train(model_path):
+def train(model_path = ''):
+    '''
+    Main training method for the Main LSTM networks which outputs the d-vectors for the clusterer
+
+    :param: model_path: the path for a pre-trained model to continue train the model from (it defulats to nothing)
+    :type model_path: str 
+    '''
     # set device to train on (CPU or GPU)
     device = torch.device(hp.device)
 
@@ -25,7 +31,7 @@ def train(model_path):
 
     embedder_net = SpeechEmbedder().to(device)
     
-    if hp.train.restore:
+    if model_path != '':
         embedder_net.load_state_dict(torch.load(model_path))
     ge2e_loss = GE2ELoss(device)
     
@@ -36,7 +42,6 @@ def train(model_path):
                 ], lr=hp.train.lr)
     
 
-    #reduce_lr = lambda lr: lr // 50
     lr_schceduler = ExponentialLR(optimizer, gamma=0.5)
 
 
@@ -54,22 +59,13 @@ def train(model_path):
             batch = batch.to(device)
             
             embeddings = torch.zeros([batch.shape[1], batch.shape[2] ,hp.model.proj]) #(num_speakers, num_utter,num_features)
-            #print("Embeddings shape:", embeddings.shape)
-
-            #for worker in batch:
-            #    for speaker_id,speaker in enumerate(worker):
-            #        print(f"speaker shape {speaker.shape}")
-            #        for utter_id, utterance in enumerate(speaker):
-            #            print(f"utter shape: {utterance.shape}")
-            #            embeddings[speaker_id,utter_id] = embedder_net(utterance)                
-
             embeddings = embedder_net(batch[0])
             #gradient accumulates
 
             optimizer.zero_grad()
             
             #get loss, call backward, step optimizer
-            loss = ge2e_loss(embeddings) #wants (Speaker, Utterances, embedding)
+            loss = ge2e_loss(embeddings)
             loss.backward()
             torch.nn.utils.clip_grad_norm_(embedder_net.parameters(), 3.0)
             torch.nn.utils.clip_grad_norm_(ge2e_loss.parameters(), 1.0)
@@ -81,8 +77,6 @@ def train(model_path):
                 print('Reduced lr in 0.1')
                 lr_schceduler.step()
                 reduce_lr_id //= 2
-
-            #total_loss = total_loss + loss
 
             iteration += 1
             if (batch_id + 1) % hp.train.log_interval == 0:
@@ -108,12 +102,6 @@ def train(model_path):
     
     print("\nDone, trained model saved at", save_model_path)
 
-def test(model_path):
-    pass
-    # TODO: calc DER
-        
+
 if __name__=="__main__":
-    if hp.training:
-        train(hp.model.model_path)
-    else:
-        test(hp.model.model_path)
+    train(hp.model.model_path)
