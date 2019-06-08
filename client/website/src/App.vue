@@ -1,6 +1,9 @@
 <template>
   <div id="app">
-    <img id="logo" alt="Vue logo" src="./assets/logo.png">
+    <div class=logo>
+      <img id=logo alt="Vue logo" src="./assets/REverb_logo.png">
+      <img id=text alt="Vue logo text" src="./assets/REverb_text.png">
+    </div>
     <recorder/>
   </div>
 </template>
@@ -26,8 +29,17 @@ export default {
   margin-top: 60px;
 }
 
-#logo {
+.logo {
+  align-items: center;
+}
+.logo #text{
   width: 50%;
   height: 50%;
+
+}
+
+.logo #logo{
+  width: 25%;
+  height: 25%;
 }
 </style>

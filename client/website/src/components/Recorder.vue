@@ -4,10 +4,9 @@
     <p>{{ response }}</p>
 
     <template v-if="this.isRecording">
-      <p>Recording for: {{ recordTime }} </p>
-      <button @click="stopRecord">Stop!</button>
+      <img @click="stopRecord" alt="stop button" src="../assets/stop.svg">
     </template>
-    <button v-else @click="startRecord">Record!</button>
+    <img v-else alt="rec button" @click="startRecord" src="../assets/button.svg">
   </div>
 </template>
 
@@ -19,19 +18,19 @@ export default {
     name: 'recorder',
     
     data() {
-        return { response: '', rc: new Recorderx(), recordTime: 0, isRecording: false } 
+        return { response: '', rc: new Recorderx(), isRecording: false } 
     },
 
     methods: {
       async startRecord() {
         try {
+          this.response = "Recording...";
           await this.rc.start()
           this.isRecording = true;
-
-          setInterval(() => this.recordTime += 1 , 1000)
         }
         catch(e) {
           this.response = e
+          this.rc.clear();
         }        
       },
 
@@ -39,11 +38,11 @@ export default {
         this.rc.pause()
         this.response = 'Finished recording'
         this.isRecording = false;
-        this.recordTime = 0;
 
         const audiofile = this.rc.getRecord({
           encodeTo: ENCODE_TYPE.WAV
         })
+        this.rc.clear();
 
         let data = new FormData()
         data.append('file', audiofile)
@@ -69,5 +68,6 @@ export default {
 <style>
 #recorder {
   align-content: center;
+  font-family:sans-serif;
 }
 </style>
