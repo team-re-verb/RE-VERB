@@ -72,22 +72,6 @@ def get_timestamps(vad_ts, diar_res, diar_frame=25, diar_stride=10):
                 curr_ts[1] += diar_stride
 
             count += 1
-
-    #for times in vad_ts:
-    #    for ts in range(times[0], times[1], diar_stride):
-    #        if not occurences[diar_res[count]]:
-    #            occurences[diar_res[count]].append(ts)
-    #            curr_speaker = diar_res[count]
-    #        elif occurences[diar_res[count]][-1] + diar_stride != ts: 
-    #            occurences[diar_res[count]].append(ts)
-    #        count += 1
-    #        #del diar_res[0]
-    #        #Not 100% accurate because we need to consider the last ebedding of a speaker and appent the diar_frame to it
-
-
-    #for speaker in occurences.keys():
-    #    occurences[speaker] = list(zip(occurences[speaker][0::2], occurences[speaker][1::2])) #Ordering each pair of timestamps in tuples
-
     return occurrences
 
 
@@ -100,49 +84,49 @@ def get_diarization(filename):
         timestamps of each speaker occurance in the audio file
         :type: dict
     '''
-
-    net = network.SpeechEmbedder()
-    net.load_state_dict(torch.load(hp.model.model_path))
-    net.eval()
-
-    print(f'Loaded model from {hp.model.model_path}!') #{hp.model.model_path}
-
-    embeddings = []
-    filter_banks, voice_timestamps = prepeare_file(filename)
-    #os.remove(f"{filename}.tmp")
-
-    print('Extracted filerbank and vad time stamps')
-
-    clusterer = spectralcluster.SpectralClusterer(min_clusters=2, max_clusters=100, p_percentile=0.95, gaussian_blur_sigma=1)
-
-    print('Initiated clusterer')
+    try:
+        net = network.SpeechEmbedder()
+        net.load_state_dict(torch.load(hp.model.model_path))
+        net.eval()
     
-    for utterance in filter_banks:
-        utterance = torch.Tensor(utterance).unsqueeze_(0).unsqueeze_(0)
-        embeddings.append(net(utterance))
+        print(f'Loaded model from {hp.model.model_path}!') #{hp.model.model_path}
     
-    embeddings = torch.squeeze(torch.stack(embeddings))
+        embeddings = []
+        filter_banks, voice_timestamps = prepeare_file(filename)
+        #os.remove(f"{filename}.tmp")
     
-    print('Got result from network!')
-
-    embeddings = embeddings.detach().numpy()
-    print('Converted to numpy')
+        print('Extracted filerbank and vad time stamps')
     
-    for i in range(embeddings.shape[0]):
-        for j in range(embeddings.shape[1]):
-            if np.isnan(embeddings[i,j]):
-                print(f"Nan: ({i},{j})")
-                print(f"Inf: ({i},{j})")
+        clusterer = spectralcluster.SpectralClusterer(min_clusters=2, max_clusters=100, p_percentile=0.95, gaussian_blur_sigma=1)
+    
+        print('Initiated clusterer')
+        
+        for utterance in filter_banks:
+            utterance = torch.Tensor(utterance).unsqueeze_(0).unsqueeze_(0)
+            embeddings.append(net(utterance))
+        
+        embeddings = torch.squeeze(torch.stack(embeddings))
+        
+        print('Got result from network!')
+    
+        embeddings = embeddings.detach().numpy()
+        print('Converted to numpy')
 
-    results = clusterer.predict(embeddings)
-    print(f'Predicted results from clusterer {results}')
+        results = clusterer.predict(embeddings)
+        print(f'Predicted results from clusterer {results}')
+    
+        diarization_res = get_timestamps(voice_timestamps, results)
+        diarization_res = {str(x):y for x,y in diarization_res.items()}
+    
+    
+        return json.dumps(diarization_res, indent=2)
+    
+    except:
+        return ('''Could not process file. 
+        Make sure that the file is uncorrupted, in the right format
+        or does not contain empty recording''')
 
-    diarization_res = get_timestamps(voice_timestamps, results)
-    diarization_res = {str(x):y for x,y in diarization_res.items()}
-
-
-    return json.dumps(diarization_res, indent=2)
 
 if __name__ == "__main__":
-    wow = get_diarization("../../client/basic-cli/audio/record.wav")
-    print(wow)
+    #for debug purposes
+    print(get_diarization("../../client/basic-cli/audio/record.wav"))

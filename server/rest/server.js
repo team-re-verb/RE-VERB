@@ -73,7 +73,7 @@ app.post('/upload' , upload.single('file') , (req,res, next) => {
  * Event listener to GET request of /
  * 
 */
-app.get('/' , (req , res, next) => {
+app.get('*' , (req , res, next) => {
 
     const param = req.query.txt ? req.query.txt : "defualt";
 
@@ -87,24 +87,19 @@ app.get('/' , (req , res, next) => {
 
 
 /**
- * In Both cases for requests for / and /upload there is a need to 
- * send messages to the python server
+ * In every request for a page in the server there is a need to 
+ * send messages to the python server and receive them.
+ * 
+ * This middleware listens for any incoming messages from the python
+ * server and then sends it to the client.
 */
-app.use(["/" , "/upload"] , (req, res, next) => {
+app.use("*", (req, res, next) => {
     subscriber.on('message', (channel, msg) => {
         console.log("sending message: ", msg, "to ", req.path);
-        res.end(channel + " : " + msg);
+        res.end(msg);
         next();
     })
 });
-
-/**
- * Used for returning HTTP 404 errors in case that a user tries to access a page which is not found
-*/
-//app.get('*', function(req, res) {
-//    console.log('not found!!!@!@!')
-//    res.status(404).send('Page not found.');
-//});
 
 
 /**

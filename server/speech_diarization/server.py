@@ -24,7 +24,7 @@ def ServerMain():
 
                 if command[0] == "param":
                     print("sending hello " + command[1])
-                    r.publish("diarization_node" , "Welcome to RE:VERB api server. Upload a file to /upload in order to get diarization results!")
+                    r.publish("diarization_node" , "Welcome to RE:VERB api server. Upload a file to /upload in order to get diarization results (use HTTP POST request)!")
                 elif command[0] == "file":
                     print(f"Got file name: {command[1]}")
                     print(os.listdir())
