@@ -4,9 +4,9 @@
     <p>{{ response }}</p>
 
     <template v-if="this.isRecording">
-      <img @click="stopRecord" alt="stop button" src="../assets/stop.svg">
+      <img class="button" alt="stop button" @click="stopRecord" src="../assets/stop.svg">
     </template>
-    <img v-else alt="rec button" @click="startRecord" src="../assets/button.svg">
+    <img v-else class="button" alt="rec button" @click="startRecord" src="../assets/button.svg">
   </div>
 </template>
 
@@ -49,12 +49,12 @@ export default {
 
         this.response = 'sending data'
         try {
-          let response = await fetch('http://localhost:1337/upload', {
+          let server_response = await fetch('http://localhost:1337/upload', {
             method: 'POST',
             body: data
           })
 
-          this.response = await response.text()
+          this.response = await server_response.text()
         }
         catch(e) {
           this.response = e
@@ -69,5 +69,8 @@ export default {
 #recorder {
   align-content: center;
   font-family:sans-serif;
+}
+.button {
+  cursor: pointer;
 }
 </style>
