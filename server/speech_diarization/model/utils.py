@@ -81,8 +81,9 @@ def vad(audiofile, frame_len=20, max_frame_len=400 ,agressiveness=1):
     
     speech = [Frame()]
 
-    #voice_indexes = [i for i in range(0, len(audiofile), frame_len)] #every index represents a timestamp with jump of frame_len miliseconds
-    #voice_ts = []
+
+    voice_indexes = [i for i in range(0, len(audiofile), frame_len)] #every index represents a timestamp with jump of frame_len miliseconds
+    voice_ts = []
 
     vad.set_mode(agressiveness) #Agressiveness of the vad
 
