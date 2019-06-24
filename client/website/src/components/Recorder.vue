@@ -1,12 +1,21 @@
 <template>
-  <div>
+  <div id="recorder">
     <h1>Start recording your conversation!</h1>
     <p>{{ response }}</p>
-
-    <template v-if="this.isRecording">
-      <img class="button" alt="stop button" @click="stopRecord" src="../assets/stop.svg">
-    </template>
-    <img v-else class="button" alt="rec button" @click="startRecord" src="../assets/button.svg">
+    <div id="container">
+      
+      <template v-if="this.isRecording">
+        <img class="button" alt="stop button" @click="stopRecord" src="../assets/stop.svg">
+      </template>
+      
+      <template v-else>
+        <div v-if="this.showAnalysisButton" class="button" id="analyze">
+          <a href="/analyze">Analyze results</a>
+        </div>
+        <img class="button" alt="rec button" @click="startRecord" src="../assets/button.svg">
+      </template>
+    
+    </div>
   </div>
 </template>
 
@@ -18,7 +27,7 @@ export default {
     name: 'recorder',
     
     data() {
-        return { response: '', rc: new Recorderx(), isRecording: false } 
+        return { response: '', rc: new Recorderx(), isRecording: false , showAnalysisButton: false} 
     },
 
     methods: {
@@ -38,6 +47,7 @@ export default {
         this.rc.pause()
         this.response = 'Finished recording'
         this.isRecording = false;
+        this.showAnalysisButton = false;
 
         const audiofile = this.rc.getRecord({
           encodeTo: ENCODE_TYPE.WAV
@@ -46,6 +56,8 @@ export default {
 
         let data = new FormData()
         data.append('file', audiofile)
+        localStorage.audiofile = audiofile
+        console.log(audiofile)
 
         this.response = 'sending data'
         try {
@@ -54,7 +66,20 @@ export default {
             body: data
           })
 
-          this.response = await server_response.text()
+          let result = await server_response.text()
+          
+          if(result == "ERROR"){
+            this.response = `Could not process file. 
+        Make sure that the file is uncorrupted, in the right format
+        or does not contain empty recording`
+          }
+          else{
+            this.response = result
+            this.showAnalysisButton = true;
+
+            localStorage.results = this.response
+            
+          }
         }
         catch(e) {
           this.response = e
@@ -67,10 +92,28 @@ export default {
 
 <style>
 #recorder {
-  align-content: center;
-  font-family:sans-serif;
+  font-family:Arial, Helvetica, sans-serif;
 }
 .button {
   cursor: pointer;
+}
+.container{
+  align-items: center;
+}
+#analyze{
+  background-image: linear-gradient(to bottom right, red, orange);
+  width: 18vw;
+  height: 4vw;
+  border-radius: 15px;
+  display:flex;
+  justify-content: center;
+  align-items: center;
+}
+#analyze>a{
+  position: relative;
+  text-decoration: none;
+  color: white;
+  font-weight: bold;
+  font-size: 2vw;
 }
 </style>

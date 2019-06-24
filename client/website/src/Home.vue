@@ -1,5 +1,5 @@
 <template>
-  <div id="app">
+  <div id="home">
     <div class=logo>
       <img id=logo alt="Vue logo" src="./assets/REverb_logo.png">
       <img id=text alt="Vue logo text" src="./assets/REverb_text.png">
@@ -12,7 +12,7 @@
 import Recorder from './components/Recorder.vue'
 
 export default {
-  name: 'app',
+  name: 'home',
   components: {
     Recorder
   }
@@ -20,7 +20,7 @@ export default {
 </script>
 
 <style>
-#app {
+#home {
   font-family: 'Avenir', Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;

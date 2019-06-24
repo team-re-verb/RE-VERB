@@ -122,9 +122,7 @@ def get_diarization(filename):
         return json.dumps(diarization_res, indent=2)
     
     except:
-        return ('''Could not process file. 
-        Make sure that the file is uncorrupted, in the right format
-        or does not contain empty recording''')
+        return ("ERROR")
 
 
 if __name__ == "__main__":

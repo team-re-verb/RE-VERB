@@ -8,13 +8,14 @@
     "lint": "vue-cli-service lint"
   },
   "dependencies": {
-    "axios": "^0.18.0",
+    "axios": "^0.19.0",
     "core-js": "^2.6.5",
     "inline-worker": "^1.1.0",
     "recorderx": "^2.0.2",
     "vue": "^2.6.10",
     "vue-audio-recorder": "^3.0.1",
-    "vue-resource": "^1.5.1"
+    "vue-resource": "^1.5.1",
+    "wavesurfer.js": "^2.2.1"
   },
   "devDependencies": {
     "@vue/cli-plugin-babel": "^3.7.0",
