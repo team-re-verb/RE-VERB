@@ -119,7 +119,7 @@ def get_diarization(filename):
         diarization_res = {str(x):y for x,y in diarization_res.items()}
     
     
-        return json.dumps(diarization_res, indent=2)
+        return json.dumps(diarization_res)
     
     except:
         return ("ERROR")

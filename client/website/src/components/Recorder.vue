@@ -57,7 +57,6 @@ export default {
         let data = new FormData()
         data.append('file', audiofile)
         localStorage.audiofile = audiofile
-        console.log(audiofile)
 
         this.response = 'sending data'
         try {
