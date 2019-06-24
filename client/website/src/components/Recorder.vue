@@ -94,6 +94,9 @@ export default {
 #recorder {
   font-family:Arial, Helvetica, sans-serif;
 }
+#recorder > *{
+  margin-top: 3vw;
+}
 .button {
   cursor: pointer;
 }
@@ -102,9 +105,11 @@ export default {
 }
 #analyze{
   background-image: linear-gradient(to bottom right, red, orange);
-  width: 18vw;
-  height: 4vw;
-  border-radius: 15px;
+  width: 19vw;
+  height: 5vw;
+  border-radius: 2vw;
+  margin-right:auto;
+  margin-left:auto;
   display:flex;
   justify-content: center;
   align-items: center;
