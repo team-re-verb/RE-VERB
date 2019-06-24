@@ -95,7 +95,8 @@ export default {
   font-family:Arial, Helvetica, sans-serif;
 }
 #recorder > *{
-  margin-top: 3vw;
+  margin-top: 2vw;
+  margin-bottom: 2vw;
 }
 .button {
   cursor: pointer;
@@ -105,9 +106,9 @@ export default {
 }
 #analyze{
   background-image: linear-gradient(to bottom right, red, orange);
-  width: 19vw;
-  height: 5vw;
-  border-radius: 2vw;
+  width: 180px;
+  height: 50px;
+  border-radius: 50px;
   margin-right:auto;
   margin-left:auto;
   display:flex;
@@ -119,6 +120,6 @@ export default {
   text-decoration: none;
   color: white;
   font-weight: bold;
-  font-size: 2vw;
+  font-size: 18.5px;
 }
 </style>
