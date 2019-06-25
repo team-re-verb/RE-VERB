@@ -1,27 +1,32 @@
 <template>
-  <div id="home">
-    <div class=logo>
-      <img id=logo alt="Vue logo" src="./assets/REverb_logo.png">
-      <img id=text alt="Vue logo text" src="./assets/REverb_text.png">
+  <div>
+    <div id="home" v-if="!this.$store.getters.showAnalyze">
+      <div class="logo">
+        <img id="logo" alt="Vue logo" src="./assets/REverb_logo.png">
+        <img id="text" alt="Vue logo text" src="./assets/REverb_text.png">
+      </div>
+      <recorder/>
     </div>
-    <recorder/>
+    <Analyze v-else/>
   </div>
 </template>
 
 <script>
-import Recorder from './components/Recorder.vue'
+import Recorder from "./components/Recorder.vue";
+import Analyze from "./Analyze"
 
 export default {
-  name: 'home',
+  name: "home",
   components: {
-    Recorder
+    Recorder,
+    Analyze
   }
-}
+};
 </script>
 
 <style>
 #home {
-  font-family: 'Avenir', Helvetica, Arial, sans-serif;
+  font-family: "Avenir", Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-align: center;
@@ -32,13 +37,12 @@ export default {
 .logo {
   align-items: center;
 }
-.logo #text{
+.logo #text {
   width: 50%;
   height: 50%;
-
 }
 
-.logo #logo{
+.logo #logo {
   width: 25%;
   height: 25%;
 }

@@ -1,7 +1,7 @@
 <template>
-  <div>
+  <div id="container">
     <div id="waveform"></div>
-    <button @click="waveform.play()">play</button>
+    <div class="button" @click="waveform.play()"><img src="../assets/play.svg" alt="play"></div>
   </div>
 </template>
 
@@ -17,15 +17,15 @@ export default {
 
     this.waveform = WaveSurfer.create({
         container: "#waveform",
-        waveColor: "red",
-        progressColor: "#ba4300",
+        waveColor: "black",
+        progressColor: "dark grey",
         plugins: [
           WaveSurfer.cursor.create(),
           WaveSurfer.regions.create()
         ]
       });
 
-    this.waveform.load("record.wav")//this.waveform.loadBlob(localStorage.audiofile);
+    this.waveform.loadBlob(this.$store.getters.audiofile)//this.waveform.loadBlob(localStorage.audiofile);
 
     let timeStamps = JSON.parse(localStorage.results)
     
@@ -55,3 +55,27 @@ export default {
   }
 };
 </script>
+
+<style scoped>
+#container > div {
+  margin-top: 10px;
+}
+.button {
+  background-image: linear-gradient(to bottom right, red, orange);
+  margin-left:auto;
+  margin-right:auto;
+  border-radius:50px;
+  height: 60px;
+  width: 60px;
+  display:flex;
+  justify-content: center;
+  align-items: center;
+  
+}
+.button > * {
+position: relative;
+padding-left: 4px;
+height: 40px;
+width: 40px;
+}
+</style>

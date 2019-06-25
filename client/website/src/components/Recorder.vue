@@ -9,8 +9,8 @@
       </template>
       
       <template v-else>
-        <div v-if="this.showAnalysisButton" class="button" id="analyze">
-          <a href="/analyze">Analyze results</a>
+        <div v-if="this.showAnalysisButton" @click="$store.commit('toggle')" class="button" id="analyze">
+          Analyze results
         </div>
         <img class="button" alt="rec button" @click="startRecord" src="../assets/button.svg">
       </template>
@@ -56,7 +56,8 @@ export default {
 
         let data = new FormData()
         data.append('file', audiofile)
-        localStorage.audiofile = audiofile
+        // push to vuex
+        this.$store.commit('change', audiofile)
 
         this.response = 'sending data'
         try {
@@ -113,10 +114,6 @@ export default {
   display:flex;
   justify-content: center;
   align-items: center;
-}
-#analyze>a{
-  position: relative;
-  text-decoration: none;
   color: white;
   font-weight: bold;
   font-size: 18.5px;
