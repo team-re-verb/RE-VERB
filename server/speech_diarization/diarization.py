@@ -6,7 +6,6 @@ import numpy as np
 import json
 import os
 
-
 import model.utils as utils
 import model.network as network
 from model.hparam import hp
@@ -23,14 +22,22 @@ def prepeare_file(filename):
     '''
 
     tmp_path = filename + '.tmp'
+    filter_banks = []
+    timestamps = []
 
     audiofile = AudioSegment.from_file(filename)
     audiofile = utils.adjust_file(audiofile)
 
-    vad, timestemps = utils.vad(audiofile, agressiveness=1)
-    vad.export(tmp_path, format='wav')
+    speech = utils.vad(audiofile, agressiveness=1)
+    
+    for i,frame in enumerate(speech):
+        frame.audio.export(f"{i}tmp_path", format='wav')
+        filter_banks.append(utils.get_logmel_fb(f"{i}tmp_path"))
+        timestamps.append(frame.timestamps)
+        os.remove(f"{i}tmp_path")
+    
 
-    return utils.get_logmel_fb(tmp_path), timestemps
+    return filter_banks,timestamps
 
 
 
@@ -57,21 +64,11 @@ def get_timestamps(vad_ts, diar_res, diar_frame=25, diar_stride=10):
 
     occurrences = { x:[] for x in Counter(diar_res).keys() }
     count = 0
-    curr_speaker = None
-    curr_ts = None
 
-    for times in vad_ts:
-        for ts in range(times[0],times[1],diar_stride):
-            speaker = diar_res[count]
-            if speaker != curr_speaker: # new sequence
-                if curr_ts != None:
-                    occurrences[diar_res[count-1]].append(curr_ts)
-                curr_ts = [ts, ts + diar_frame]
-                curr_speaker = speaker
-            else:
-                curr_ts[1] += diar_stride
+    for res in diar_res:
+        occurrences[res].append(vad_ts[count])
+        count += 1
 
-            count += 1
     return occurrences
 
 
@@ -92,18 +89,19 @@ def get_diarization(filename):
         print(f'Loaded model from {hp.model.model_path}!') #{hp.model.model_path}
     
         embeddings = []
-        filter_banks, voice_timestamps = prepeare_file(filename)
+        filter_banks, timestamps = prepeare_file(filename)
+
         #os.remove(f"{filename}.tmp")
     
         print('Extracted filerbank and vad time stamps')
     
-        clusterer = spectralcluster.SpectralClusterer(min_clusters=2, max_clusters=100, p_percentile=0.95, gaussian_blur_sigma=1)
+        clusterer = spectralcluster.SpectralClusterer(min_clusters=2, max_clusters=8, p_percentile=0.95, gaussian_blur_sigma=1)
     
         print('Initiated clusterer')
         
         for utterance in filter_banks:
             utterance = torch.Tensor(utterance).unsqueeze_(0).unsqueeze_(0)
-            embeddings.append(net(utterance))
+            embeddings.append(torch.mean(net(utterance), dim=1))
         
         embeddings = torch.squeeze(torch.stack(embeddings))
         
@@ -115,7 +113,7 @@ def get_diarization(filename):
         results = clusterer.predict(embeddings)
         print(f'Predicted results from clusterer {results}')
     
-        diarization_res = get_timestamps(voice_timestamps, results)
+        diarization_res = get_timestamps(timestamps, results)
         diarization_res = {str(x):y for x,y in diarization_res.items()}
     
     

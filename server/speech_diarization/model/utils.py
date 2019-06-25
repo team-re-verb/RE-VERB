@@ -9,6 +9,8 @@ import torch.nn.functional as F
 
 import os
 
+from frame import Frame
+
 
 def get_logmel_fb(path, len_window=25, stride=10, filters=40):
     '''
@@ -61,7 +63,7 @@ def adjust_file(audiofile):
 
 
 
-def vad(audiofile, frame_len=30, agressiveness=1):
+def vad(audiofile, frame_len=20, max_frame_len=400 ,agressiveness=1):
     '''
     Performes Voice Activity Detection on an audio file
 
@@ -72,31 +74,36 @@ def vad(audiofile, frame_len=30, agressiveness=1):
 
     :returns: the voice frames from the file and a list of voice activity timestamps
     '''
-    
-    speech = AudioSegment.empty()
+
+    #speech = AudioSegment.empty()
     vad = webrtcvad.Vad()
     sample_rate = audiofile.frame_rate
+    
+    speech = [Frame()]
 
-
-    voice_indexes = [i for i in range(0, len(audiofile), frame_len)] #every index represents a timestamp with jump of frame_len miliseconds
-    voice_ts = []
+    #voice_indexes = [i for i in range(0, len(audiofile), frame_len)] #every index represents a timestamp with jump of frame_len miliseconds
+    #voice_ts = []
 
     vad.set_mode(agressiveness) #Agressiveness of the vad
 
 
+
     for ts,frame in enumerate(audiofile[::frame_len]):
         if len(frame) == frame_len:
-            if vad.is_speech(frame.raw_data, sample_rate):
-                speech += frame
-                if not voice_ts:
-                    voice_ts.append(voice_indexes[ts])
-                elif voice_ts[-1] + frame_len != voice_indexes[ts]:
-                    voice_ts.append(voice_indexes[ts]) #Adding the time-stamp if there is a voice in that frame
+            if vad.is_speech(frame.audio_data, sample_rate):
+                if len(speech[-1]) + frame_len <= max_frame_len:
+                    speech[-1] += Frame(ts,ts+frame_len, frame)
+                else:
+                    speech.append(Frame())
+                #if not voice_ts:
+                #    voice_ts.append(voice_indexes[ts])
+                #elif voice_ts[-1] + frame_len != voice_indexes[ts]:
+                #    voice_ts.append(voice_indexes[ts]) #Adding the time-stamp if there is a voice in that frame
 
     
     #splitting the list of time-stamps into even and odd lists then zip them to get list of tuples of (start,end)
-    voice_ts = list(zip(voice_ts[0:][::2], voice_ts[1:][::2])) 
-    return speech, voice_ts
+    #voice_ts = list(zip(voice_ts[0:][::2], voice_ts[1:][::2])) 
+    return speech
 
 
 
@@ -216,3 +223,11 @@ def calc_loss(sim_matrix):
     loss = per_embedding_loss.sum()
     
     return loss, per_embedding_loss
+
+
+
+def average_embeddings(embeddings):
+    ''' 
+    Avrages the embedding d-vectors outputted from the network according
+    '''
+    pass
