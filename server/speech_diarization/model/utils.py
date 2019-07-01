@@ -61,7 +61,7 @@ def adjust_file(audiofile):
 
 
 
-def vad(audiofile, frame_len=20, max_segment_len, agressiveness=1):
+def vad(audiofile, frame_len=30, agressiveness=1):
     '''
     Performes Voice Activity Detection on an audio file
 
@@ -77,9 +77,12 @@ def vad(audiofile, frame_len=20, max_segment_len, agressiveness=1):
     vad = webrtcvad.Vad()
     sample_rate = audiofile.frame_rate
 
+
+    voice_indexes = [i for i in range(0, len(audiofile), frame_len)] #every index represents a timestamp with jump of frame_len miliseconds
+    voice_ts = []
+
     vad.set_mode(agressiveness) #Agressiveness of the vad
 
-    
 
     for ts,frame in enumerate(audiofile[::frame_len]):
         if len(frame) == frame_len:
