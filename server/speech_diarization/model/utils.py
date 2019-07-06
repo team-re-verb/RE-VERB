@@ -1,6 +1,6 @@
 from pydub import AudioSegment
 import webrtcvad
-import scipy.io.wavfile as wav
+import numpy as np
 import speechpy
 
 import torch
@@ -9,14 +9,14 @@ import torch.nn.functional as F
 
 import os
 
-from frame import Frame
+from model.frame import Frame
 
 
-def get_logmel_fb(path, len_window=25, stride=10, filters=40):
+def get_logmel_fb(segment, len_window=25, stride=10, filters=40):
     '''
     Gives the log mel filter bank features for each utterance in a audio
 
-    :param path: the path to the wave file to be read from
+    :param segment: a pydub AudioSegment object
     :param len_window: the length of each sliding window for the features to be extracted from
     :param stride: the non-overlapping part for each window
     :param filters: the number of filters (features)
@@ -26,7 +26,8 @@ def get_logmel_fb(path, len_window=25, stride=10, filters=40):
         :type: numpy.ndarray
     '''
 
-    sample_rate, signals = wav.read(path)
+    sample_rate = segment.frame_rate
+    signals = np.array(segment.get_array_of_samples())
 
     #converting to ms
     len_window /= 1000
@@ -75,15 +76,11 @@ def vad(audiofile, frame_len=20, max_frame_len=400 ,agressiveness=1):
     :returns: the voice frames from the file and a list of voice activity timestamps
     '''
 
-    #speech = AudioSegment.empty()
     vad = webrtcvad.Vad()
     sample_rate = audiofile.frame_rate
     
     speech = [Frame()]
 
-
-    voice_indexes = [i for i in range(0, len(audiofile), frame_len)] #every index represents a timestamp with jump of frame_len miliseconds
-    voice_ts = []
 
     vad.set_mode(agressiveness) #Agressiveness of the vad
 
@@ -91,19 +88,18 @@ def vad(audiofile, frame_len=20, max_frame_len=400 ,agressiveness=1):
 
     for ts,frame in enumerate(audiofile[::frame_len]):
         if len(frame) == frame_len:
-            if vad.is_speech(frame.audio_data, sample_rate):
+            if vad.is_speech(frame.raw_data, sample_rate):
                 if len(speech[-1]) + frame_len <= max_frame_len:
                     speech[-1] += Frame(ts,ts+frame_len, frame)
                 else:
                     speech.append(Frame())
-                #if not voice_ts:
-                #    voice_ts.append(voice_indexes[ts])
-                #elif voice_ts[-1] + frame_len != voice_indexes[ts]:
-                #    voice_ts.append(voice_indexes[ts]) #Adding the time-stamp if there is a voice in that frame
+            elif len(speech[-1]) != 0:
+                speech.append(Frame())
 
+    # handling an empty frame at the end
+    if len(speech[-1]) == 0:
+        speech.pop()
     
-    #splitting the list of time-stamps into even and odd lists then zip them to get list of tuples of (start,end)
-    #voice_ts = list(zip(voice_ts[0:][::2], voice_ts[1:][::2])) 
     return speech
 
 

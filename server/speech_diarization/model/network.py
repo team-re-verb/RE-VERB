@@ -6,7 +6,7 @@ from model.hparam import hp
 class SpeechEmbedder(nn.Module):
     '''
     This class is used as the class for the main LSTM d-vector embedding network as described in Quan Wang's paper (https://arxiv.org/abs/1710.10468).
-    This class inherits from torch.nn.Module which represet a neural network.
+    This class inherits from torch.nn.Module and represets a neural network.
     '''
     
     def __init__(self):

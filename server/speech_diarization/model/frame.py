@@ -7,16 +7,26 @@ class Frame():
         self.end = end
         self.audio = audio
 
+    def __eq__(self, frame):
+        return self.start == frame.start and self.end == frame.end
+
     def __len__(self):
         return self.end - self.start
 
     def __iadd__(self, frame):
-        if self.start < frame.start:
+        if len(self) == 0: # empty case
+            self.start = frame.start
+            self.end = frame.end
+            self.audio = frame.audio
+
+        elif self.start < frame.start:
             self.end = frame.end
             self.audio += frame.audio
         elif self.start > frame.start:
             self.start = frame.start
             self.audio = frame.audio + self.audio
+        
+        return self
 
     def __add__(self,frame):
         new_frame = Frame()

@@ -21,7 +21,6 @@ def prepeare_file(filename):
         :type: tuple of (np.ndarray of shape (num_utterances, num_filters), list)
     '''
 
-    tmp_path = filename + '.tmp'
     filter_banks = []
     timestamps = []
 
@@ -30,11 +29,9 @@ def prepeare_file(filename):
 
     speech = utils.vad(audiofile, agressiveness=1)
     
-    for i,frame in enumerate(speech):
-        frame.audio.export(f"{i}tmp_path", format='wav')
-        filter_banks.append(utils.get_logmel_fb(f"{i}tmp_path"))
-        timestamps.append(frame.timestamps)
-        os.remove(f"{i}tmp_path")
+    for frame in speech:
+        filter_banks.append(utils.get_logmel_fb(frame.audio))
+        timestamps.append(frame.timestamps())
     
 
     return filter_banks,timestamps
@@ -99,8 +96,9 @@ def get_diarization(filename):
     
         print('Initiated clusterer')
         
+        #TODO: fix tensor shape, clusterer does not accept
         for utterance in filter_banks:
-            utterance = torch.Tensor(utterance).unsqueeze_(0).unsqueeze_(0)
+            utterance = torch.Tensor(utterance).unsqueeze_(0) # adding an empty 3rd dimention, to represent 1 speaker input
             embeddings.append(torch.mean(net(utterance), dim=1))
         
         embeddings = torch.squeeze(torch.stack(embeddings))
@@ -119,8 +117,9 @@ def get_diarization(filename):
     
         return json.dumps(diarization_res)
     
-    except:
-        return ("ERROR")
+    except Exception as e:
+        print(e)
+        return("ERROR")
 
 
 if __name__ == "__main__":
