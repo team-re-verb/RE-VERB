@@ -27,7 +27,7 @@ def prepeare_file(filename):
     audiofile = AudioSegment.from_file(filename)
     audiofile = utils.adjust_file(audiofile)
 
-    speech = utils.vad(audiofile, agressiveness=1)
+    speech = utils.vad(audiofile, agressiveness=2)
     
     for frame in speech:
         filter_banks.append(utils.get_logmel_fb(frame.audio))
@@ -99,7 +99,7 @@ def get_diarization(filename):
         #TODO: fix tensor shape, clusterer does not accept
         for utterance in filter_banks:
             utterance = torch.Tensor(utterance).unsqueeze_(0) # adding an empty 3rd dimention, to represent 1 speaker input
-            embeddings.append(torch.mean(net(utterance), dim=1))
+            embeddings.append(net(utterance))
         
         embeddings = torch.squeeze(torch.stack(embeddings))
         

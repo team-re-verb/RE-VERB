@@ -90,7 +90,7 @@ def vad(audiofile, frame_len=20, max_frame_len=400 ,agressiveness=1):
         if len(frame) == frame_len:
             if vad.is_speech(frame.raw_data, sample_rate):
                 if len(speech[-1]) + frame_len <= max_frame_len:
-                    speech[-1] += Frame(ts,ts+frame_len, frame)
+                    speech[-1] += Frame(ts * frame_len,(ts+1) * frame_len, frame)
                 else:
                     speech.append(Frame())
             elif len(speech[-1]) != 0:
