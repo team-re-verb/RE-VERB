@@ -7,6 +7,8 @@ import torch
 import torch.autograd as grad
 import torch.nn.functional as F
 
+from model.hparam import hp
+
 import os
 
 from model.frame import Frame
@@ -64,7 +66,7 @@ def adjust_file(audiofile):
 
 
 
-def vad(audiofile, frame_len=20, max_frame_len=400 ,agressiveness=1):
+def vad(audiofile, frame_len=hp.diarization.frame_len, max_frame_len=hp.diarization.max_frame_len ,agressiveness=1):
     '''
     Performes Voice Activity Detection on an audio file
 
@@ -220,11 +222,3 @@ def calc_loss(sim_matrix):
     loss = per_embedding_loss.sum()
     
     return loss, per_embedding_loss
-
-
-
-def average_embeddings(embeddings):
-    ''' 
-    Avrages the embedding d-vectors outputted from the network according
-    '''
-    pass

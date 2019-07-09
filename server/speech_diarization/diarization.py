@@ -27,15 +27,14 @@ def prepeare_file(filename):
     audiofile = AudioSegment.from_file(filename)
     audiofile = utils.adjust_file(audiofile)
 
-    speech = utils.vad(audiofile, agressiveness=2)
-    
+    speech = utils.vad(
+        audiofile, agressiveness=hp.diarization.vad_agressiveness)
+
     for frame in speech:
         filter_banks.append(utils.get_logmel_fb(frame.audio))
         timestamps.append(frame.timestamps())
-    
 
-    return filter_banks,timestamps
-
+    return filter_banks, timestamps
 
 
 def get_timestamps(vad_ts, diar_res, diar_frame=25, diar_stride=10):
@@ -59,12 +58,10 @@ def get_timestamps(vad_ts, diar_res, diar_frame=25, diar_stride=10):
         :type: dict
     '''
 
-    occurrences = { x:[] for x in Counter(diar_res).keys() }
-    count = 0
+    occurrences = {x: [] for x in Counter(diar_res).keys()}
 
-    for res in diar_res:
+    for count, res in enumerate(diar_res):
         occurrences[res].append(vad_ts[count])
-        count += 1
 
     return occurrences
 
@@ -82,46 +79,51 @@ def get_diarization(filename):
         net = network.SpeechEmbedder()
         net.load_state_dict(torch.load(hp.model.model_path))
         net.eval()
-    
-        print(f'Loaded model from {hp.model.model_path}!') #{hp.model.model_path}
-    
+
+        # {hp.model.model_path}
+        print(f'Loaded model from {hp.model.model_path}!')
+
         embeddings = []
         filter_banks, timestamps = prepeare_file(filename)
 
-        #os.remove(f"{filename}.tmp")
-    
+        # os.remove(f"{filename}.tmp")
+
         print('Extracted filerbank and vad time stamps')
-    
-        clusterer = spectralcluster.SpectralClusterer(min_clusters=2, max_clusters=8, p_percentile=0.95, gaussian_blur_sigma=1)
-    
+
+        clusterer = spectralcluster.SpectralClusterer(
+            min_clusters=hp.diarization.min_clusters,
+            max_clusters=hp.diarization.max_clusters,
+            p_percentile=hp.diarization.p_percentile,
+            gaussian_blur_sigma=hp.diarization.gaussian_blur_sigma
+        )
+
         print('Initiated clusterer')
-        
-        #TODO: fix tensor shape, clusterer does not accept
+
         for utterance in filter_banks:
-            utterance = torch.Tensor(utterance).unsqueeze_(0) # adding an empty 3rd dimention, to represent 1 speaker input
+            # adding an empty 3rd dimention, to represent 1 speaker input
+            utterance = torch.Tensor(utterance).unsqueeze_(0)
             embeddings.append(net(utterance))
-        
+
         embeddings = torch.squeeze(torch.stack(embeddings))
-        
+
         print('Got result from network!')
-    
+
         embeddings = embeddings.detach().numpy()
         print('Converted to numpy')
 
         results = clusterer.predict(embeddings)
         print(f'Predicted results from clusterer {results}')
-    
+
         diarization_res = get_timestamps(timestamps, results)
-        diarization_res = {str(x):y for x,y in diarization_res.items()}
-    
-    
+        diarization_res = {str(x): y for x, y in diarization_res.items()}
+
         return json.dumps(diarization_res)
-    
+
     except Exception as e:
         print(e)
         return("ERROR")
 
 
 if __name__ == "__main__":
-    #for debug purposes
+    # for debug purposes
     print(get_diarization("../../client/basic-cli/audio/record.wav"))

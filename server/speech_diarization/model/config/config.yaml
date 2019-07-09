@@ -1,12 +1,22 @@
 training: !!bool "true"
 device: "cpu"
 ---
+diarization:
+    vad_agressiveness: 3
+    frame_len: 20 # ms
+    max_frame_len: 400 # ms
+    #params for clustering
+    min_clusters: 2
+    max_clusters: 4
+    p_percentile: 0.95
+    gaussian_blur_sigma: 1
+---
 data:
     dataset_path: 'dataset.h5'
     train_size: 0.85 # test size is "1 - (train_size)"
-    sr: 16000
-    window: 25 #(millisecs)
-    stride: 10 #(millisecs)
+    sr: 16000 # sample rate
+    window: 25 # ms
+    stride: 10 # ms
     nfilters: 40 #Number of mel energies to extract
 ---   
 model:
