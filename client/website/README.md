@@ -1,6 +1,22 @@
-# website
+<!-- PROJECT LOGO -->
+<br />
+<p align="center">
+  <a href="https://github.com/Tralfazz/RE-VERB">
+    <img src="src/assets/REverb_logo.png" alt="Logo" height="150">
+  </a>
+</p>
+<p align="center">
+  <a href="https://github.com/Tralfazz/RE-VERB">
+    <img src="src/assets/REverb_text.png" alt="Logo" height="80">
+  </a>
+</p>
 
-## Project setup
+<br />
+
+# web client
+
+
+## setup
 ```
 yarn install
 ```
