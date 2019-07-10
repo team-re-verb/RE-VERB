@@ -2,12 +2,12 @@
 <br />
 <p align="center">
   <a href="https://github.com/Tralfazz/RE-VERB">
-    <img src="/home/amos/Projects/re-verb/client/website/src/assets/REverb_logo.png" alt="Logo" height="120">
+    <img src="client/website/src/assets/REverb_logo.png" alt="Logo" height="120">
   </a>
 </p>
 <p align="center">
   <a href="https://github.com/Tralfazz/RE-VERB">
-    <img src="/home/amos/Projects/re-verb/client/website/src/assets/REverb_text.png" alt="Logo" height="60">
+    <img src="client/website/src/assets/REverb_text.png" alt="Logo" height="60">
   </a>
 </p>
 <br />
@@ -122,3 +122,5 @@ This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md
 * We had problems with training on the AMI corpus so we used the TIMIT corpus for the model provided. 
 
 * We plan to train again on the [VoxCeleb 1 and 2](http://www.robots.ox.ac.uk/~vgg/data/voxceleb/) datasets which contain a lot more data and hopefully improve feature extraction
+
+* We want to add integration with a speech-to-text service and transcribe the created segments
